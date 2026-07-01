@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,400&family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; background: #fdfbf7; -webkit-font-smoothing: antialiased; }
+
+    @keyframes popIn {
+      0%   { transform: scale(0.5) translateY(12px); opacity: 0; }
+      65%  { transform: scale(1.1) translateY(-4px); opacity: 1; }
+      100% { transform: scale(1)   translateY(0);    opacity: 1; }
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes pulsekicker {
+      0%, 100% { opacity: 0.55; }
+      50%       { opacity: 1; }
+    }
+    @keyframes floatFinger {
+      0%, 100% { transform: translateY(0); }
+      50%       { transform: translateY(-8px); }
+    }
+  </style>
+</helmet>
+
+<div style="min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; background: #fdfbf7; padding: 80px 24px 100px; font-family: 'Cormorant Garamond', Georgia, serif;">
+
+  <!-- ── TOP EYEBROW ── -->
+  <div style="display: flex; flex-direction: column; align-items: center; gap: 20px; margin-bottom: 40px;">
+    <p style="font-family: 'Montserrat', sans-serif; font-size: 0.65rem; font-weight: 500; letter-spacing: 0.3em; text-transform: uppercase; color: #6b5a4d;">Together with our families</p>
+    <h1 style="font-family: 'Playfair Display', serif; font-size: clamp(2.4rem, 6vw, 4rem); font-weight: 700; line-height: 1.1; text-align: center; background: linear-gradient(135deg, #6b2c2c 0%, #d4816e 50%, #d4af37 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Archit &amp; Arjita</h1>
+    <p style="font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 1.2rem; color: #6b5a4d; text-align: center;">we invite you to our Roka — a cocktail celebration</p>
+  </div>
+
+  <!-- ── DIVIDER ── -->
+  <div style="display: flex; align-items: center; gap: 16px; width: 100%; max-width: 480px; margin-bottom: 52px;">
+    <div style="flex: 1; height: 1px; background: linear-gradient(to right, transparent, rgba(212,175,55,0.5));"></div>
+    <div style="width: 6px; height: 6px; background: #d4af37; transform: rotate(45deg);"></div>
+    <div style="flex: 1; height: 1px; background: linear-gradient(to left, transparent, rgba(212,175,55,0.5));"></div>
+  </div>
+
+  <!-- ── SCRATCH SECTION ── -->
+  <div style="display: flex; flex-direction: column; align-items: center; gap: 20px; width: 100%; max-width: 520px;">
+
+    <!-- kicker -->
+    <div style="display: flex; align-items: center; gap: 14px;">
+      <div style="width: 40px; height: 1px; background: linear-gradient(to right, transparent, #d4af37);"></div>
+      <p id="scratch-kicker" style="font-family: 'Montserrat', sans-serif; font-size: 0.68rem; font-weight: 500; letter-spacing: 0.25em; text-transform: uppercase; color: #6b5a4d; animation: pulsekicker 2.5s ease-in-out infinite;">Scratch to reveal</p>
+      <div style="width: 40px; height: 1px; background: linear-gradient(to left, transparent, #d4af37);"></div>
+    </div>
+
+    <!-- card wrapper — overflow:hidden clips the canvas to the rounded corners -->
+    <div id="scratch-wrap" style="position: relative; width: 100%; border-radius: 20px; overflow: hidden; box-shadow: 0 16px 56px rgba(180,140,20,0.22), 0 4px 16px rgba(42,24,16,0.1);">
+
+      <!-- content underneath the scratch layer -->
+      <div id="under-card" style="background: linear-gradient(135deg, #c9962a 0%, #d4af37 35%, #f0d060 60%, #c9962a 100%); padding: 44px 48px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 10px;">
+        <p style="font-family: 'Montserrat', sans-serif; font-size: 0.6rem; font-weight: 500; letter-spacing: 0.3em; text-transform: uppercase; color: rgba(42,24,16,0.5);">Save the Date</p>
+        <p id="date-text" style="font-family: 'Playfair Display', serif; font-size: clamp(2rem, 6vw, 3rem); font-weight: 700; color: #2a1810; opacity: 0; will-change: transform, opacity;">18 July 2026</p>
+        <p id="day-text" style="font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 1.15rem; color: rgba(42,24,16,0.65); opacity: 0; transition: opacity 0.7s ease 0.5s;">Saturday · 7:00 PM onwards</p>
+      </div>
+
+      <!-- scratch canvas overlaid exactly on top -->
+      <canvas id="scratch-canvas" style="position: absolute; top: 0; left: 0; cursor: crosshair; touch-action: none; display: block;"></canvas>
+    </div>
+
+    <!-- finger hint (hidden after reveal) -->
+    <div id="finger-hint" style="display: flex; flex-direction: column; align-items: center; gap: 8px; margin-top: 4px;">
+      <div style="font-size: 1.8rem; animation: floatFinger 1.8s ease-in-out infinite;" aria-hidden="true">👆</div>
+      <p style="font-family: 'Montserrat', sans-serif; font-size: 0.68rem; letter-spacing: 0.18em; text-transform: uppercase; color: #6b5a4d; opacity: 0.55;">scratch the card</p>
+    </div>
+
+    <!-- revealed badge (shows after reveal) -->
+    <div id="reveal-badge" style="opacity: 0; transform: scale(0.7); transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.34,1.56,0.64,1); pointer-events: none;">
+      <p style="font-family: 'Montserrat', sans-serif; font-size: 0.7rem; font-weight: 500; letter-spacing: 0.22em; text-transform: uppercase; color: #d4af37;">✦ &nbsp;Date Revealed&nbsp; ✦</p>
+    </div>
+  </div>
+
+  <!-- ── BELOW CONTENT — blurred + hidden until scratch reveal ── -->
+  <div id="below-content" style="margin-top: 72px; width: 100%; max-width: 540px; opacity: 0; filter: blur(14px); pointer-events: none; transition: opacity 1.4s ease, filter 1.4s ease; display: flex; flex-direction: column; align-items: center; gap: 40px; text-align: center;">
+
+    <!-- divider -->
+    <div style="display: flex; align-items: center; gap: 16px; width: 100%;">
+      <div style="flex: 1; height: 1px; background: linear-gradient(to right, transparent, rgba(212,175,55,0.4));"></div>
+      <div style="width: 6px; height: 6px; background: #d4af37; transform: rotate(45deg);"></div>
+      <div style="flex: 1; height: 1px; background: linear-gradient(to left, transparent, rgba(212,175,55,0.4));"></div>
+    </div>
+
+    <!-- event detail cards -->
+    <div style="display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; width: 100%;">
+
+      <div style="background: #f8f4ef; border: 1px solid rgba(212,175,55,0.25); border-radius: 18px; padding: 28px 32px; min-width: 148px; flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px;">
+        <p style="font-family: 'Montserrat', sans-serif; font-size: 0.6rem; font-weight: 500; letter-spacing: 0.22em; text-transform: uppercase; color: #6b5a4d; margin-bottom: 4px;">Date</p>
+        <p style="font-family: 'Playfair Display', serif; font-size: 1.6rem; font-weight: 700; color: #2a1810;">18 July</p>
+        <p style="font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 1rem; color: #6b5a4d;">2026 · Saturday</p>
+      </div>
+
+      <div style="background: #f8f4ef; border: 1px solid rgba(212,175,55,0.25); border-radius: 18px; padding: 28px 32px; min-width: 148px; flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px;">
+        <p style="font-family: 'Montserrat', sans-serif; font-size: 0.6rem; font-weight: 500; letter-spacing: 0.22em; text-transform: uppercase; color: #6b5a4d; margin-bottom: 4px;">Time</p>
+        <p style="font-family: 'Playfair Display', serif; font-size: 1.6rem; font-weight: 700; color: #2a1810;">7:00 PM</p>
+        <p style="font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 1rem; color: #6b5a4d;">onwards</p>
+      </div>
+
+      <div style="background: #f8f4ef; border: 1px solid rgba(212,175,55,0.25); border-radius: 18px; padding: 28px 32px; min-width: 148px; flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px;">
+        <p style="font-family: 'Montserrat', sans-serif; font-size: 0.6rem; font-weight: 500; letter-spacing: 0.22em; text-transform: uppercase; color: #6b5a4d; margin-bottom: 4px;">Dress Code</p>
+        <p style="font-family: 'Playfair Display', serif; font-size: 1.2rem; font-weight: 700; color: #2a1810;">Cocktail Glam</p>
+        <p style="font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 1rem; color: #6b5a4d;">jewel tones &amp; metallics</p>
+      </div>
+    </div>
+
+    <!-- venue placeholder -->
+    <div style="background: linear-gradient(135deg, rgba(212,175,55,0.09), rgba(212,129,110,0.09)); border: 1px solid rgba(212,175,55,0.22); border-radius: 18px; padding: 32px 40px; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+      <p style="font-family: 'Montserrat', sans-serif; font-size: 0.6rem; font-weight: 500; letter-spacing: 0.25em; text-transform: uppercase; color: #6b5a4d;">Venue</p>
+      <p style="font-family: 'Playfair Display', serif; font-size: 1.6rem; font-weight: 700; color: #2a1810;">[ Venue Name ]</p>
+      <p style="font-family: 'Cormorant Garamond', serif; font-style: italic; color: #6b5a4d;">[ Address line · City ]</p>
+    </div>
+
+    <!-- hashtag -->
+    <p style="font-family: 'Montserrat', sans-serif; font-size: 0.85rem; font-weight: 400; letter-spacing: 0.12em; color: #b8941f; padding-bottom: 8px;">#ArchitAndArjita</p>
+  </div>
+
+  <!-- confetti canvas — fixed, full-screen, pointer-events:none -->
+  <canvas id="confetti-canvas" style="position: fixed; inset: 0; pointer-events: none; z-index: 9999;"></canvas>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { revealed: false };
+
+  _isDrawing = false;
+  _canvas    = null;
+  _ctx       = null;
+  _dpr       = 1;
+  _w         = 0;
+  _h         = 0;
+  _lastCheck = 0;
+  _confRaf   = null;
+
+  componentDidMount() {
+    // wait one frame so layout has settled
+    requestAnimationFrame(() => this._initCanvas());
+    window.addEventListener('resize', this._onResize);
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener('resize', this._onResize);
+    this._unbind();
+    if (this._confRaf) cancelAnimationFrame(this._confRaf);
+  }
+
+  _onResize = () => {
+    if (!this.state.revealed) {
+      requestAnimationFrame(() => this._initCanvas());
+    }
+  };
+
+  _initCanvas() {
+    const wrap = document.getElementById('scratch-wrap');
+    const canvas = document.getElementById('scratch-canvas');
+    if (!wrap || !canvas) return;
+
+    const rect = wrap.getBoundingClientRect();
+    this._dpr = Math.min(window.devicePixelRatio || 1, 2);
+    this._w   = rect.width;
+    this._h   = rect.height;
+
+    canvas.width  = this._w * this._dpr;
+    canvas.height = this._h * this._dpr;
+    canvas.style.width  = this._w + 'px';
+    canvas.style.height = this._h + 'px';
+
+    this._canvas = canvas;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(this._dpr, this._dpr);
+    this._ctx = ctx;
+
+    this._drawSurface();
+    this._unbind();
+    this._bind();
+  }
+
+  _drawSurface() {
+    const ctx = this._ctx;
+    const w   = this._w;
+    const h   = this._h;
+    if (!ctx) return;
+
+    // base gold gradient
+    const grad = ctx.createLinearGradient(0, 0, w, h);
+    grad.addColorStop(0,    '#a07820');
+    grad.addColorStop(0.25, '#d4af37');
+    grad.addColorStop(0.5,  '#f0d060');
+    grad.addColorStop(0.75, '#d4af37');
+    grad.addColorStop(1,    '#b8941f');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, w, h);
+
+    // fine vertical stripe texture
+    for (let x = 0; x <= w; x += 5) {
+      const alpha = x % 10 === 0 ? 0.14 : 0.05;
+      ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+      ctx.fillRect(x, 0, 1, h);
+    }
+
+    // subtle horizontal sheen band
+    const sheen = ctx.createLinearGradient(0, h * 0.3, 0, h * 0.7);
+    sheen.addColorStop(0,   'rgba(255,255,255,0)');
+    sheen.addColorStop(0.5, 'rgba(255,255,255,0.12)');
+    sheen.addColorStop(1,   'rgba(255,255,255,0)');
+    ctx.fillStyle = sheen;
+    ctx.fillRect(0, 0, w, h);
+
+    // "SCRATCH TO REVEAL" label
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font         = "500 11px 'Montserrat', sans-serif";
+    ctx.letterSpacing = '0.25em';
+    ctx.fillStyle    = 'rgba(42,24,16,0.38)';
+    ctx.fillText('✦   SCRATCH TO REVEAL   ✦', w / 2, h / 2);
+  }
+
+  _getXY(e) {
+    const rect = this._canvas.getBoundingClientRect();
+    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  }
+
+  _scratch(x, y) {
+    if (!this._ctx || this.state.revealed) return;
+    const ctx = this._ctx;
+    ctx.save();
+    ctx.globalCompositeOperation = 'destination-out';
+    // main erase circle
+    ctx.beginPath();
+    ctx.arc(x, y, 32, 0, Math.PI * 2);
+    ctx.fill();
+    // softer outer glow to avoid hard edges
+    const radGrad = ctx.createRadialGradient(x, y, 18, x, y, 44);
+    radGrad.addColorStop(0, 'rgba(0,0,0,1)');
+    radGrad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = radGrad;
+    ctx.beginPath();
+    ctx.arc(x, y, 44, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    const now = Date.now();
+    if (now - this._lastCheck > 180) {
+      this._lastCheck = now;
+      this._checkPercent();
+    }
+  }
+
+  _checkPercent() {
+    if (this.state.revealed || !this._canvas || !this._ctx) return;
+    const imageData = this._ctx.getImageData(0, 0, this._canvas.width, this._canvas.height);
+    const data  = imageData.data;
+    let   transparent = 0;
+    const total = data.length / 4;
+    for (let i = 3; i < data.length; i += 4) {
+      if (data[i] < 128) transparent++;
+    }
+    if (transparent / total >= 0.42) this._triggerReveal();
+  }
+
+  _triggerReveal() {
+    if (this.state.revealed) return;
+    this.setState({ revealed: true });
+
+    // fade out scratch canvas
+    const canvas = this._canvas;
+    canvas.style.transition = 'opacity 0.9s ease';
+    canvas.style.opacity    = '0';
+    setTimeout(() => { canvas.style.pointerEvents = 'none'; }, 900);
+
+    // pop-in date
+    const dateEl = document.getElementById('date-text');
+    if (dateEl) {
+      dateEl.style.opacity   = '1';
+      dateEl.style.animation = 'popIn 0.75s cubic-bezier(0.34,1.56,0.64,1) forwards';
+    }
+
+    // fade-in day/time line
+    const dayEl = document.getElementById('day-text');
+    if (dayEl) {
+      dayEl.style.opacity    = '1';
+      dayEl.style.transition = 'opacity 0.7s ease 0.5s';
+    }
+
+    // hide finger hint
+    const hint = document.getElementById('finger-hint');
+    if (hint) {
+      hint.style.transition = 'opacity 0.4s ease';
+      hint.style.opacity    = '0';
+      setTimeout(() => { hint.style.display = 'none'; }, 400);
+    }
+
+    // hide kicker
+    const kicker = document.getElementById('scratch-kicker');
+    if (kicker) kicker.style.animation = 'none';
+
+    // show revealed badge
+    const badge = document.getElementById('reveal-badge');
+    if (badge) {
+      setTimeout(() => {
+        badge.style.opacity       = '1';
+        badge.style.transform     = 'scale(1)';
+        badge.style.pointerEvents = 'auto';
+      }, 400);
+    }
+
+    // unblur below content
+    const below = document.getElementById('below-content');
+    if (below) {
+      setTimeout(() => {
+        below.style.opacity       = '1';
+        below.style.filter        = 'blur(0px)';
+        below.style.pointerEvents = 'auto';
+      }, 700);
+    }
+
+    // 🎉 confetti!
+    this._launchConfetti();
+  }
+
+  _launchConfetti() {
+    const canvas = document.getElementById('confetti-canvas');
+    if (!canvas) return;
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const ctx = canvas.getContext('2d');
+
+    const palette = [
+      '#d4af37', '#f0d060', '#b8941f',
+      '#6b2c2c', '#d4816e', '#ff8fb4',
+      '#fdfbf7', '#c9962a',
+    ];
+    const cx = window.innerWidth  * 0.5;
+    const cy = window.innerHeight * 0.44;
+
+    const particles = Array.from({ length: 160 }, (_, i) => {
+      const angle = (Math.PI * 2 * i) / 160 + (Math.random() - 0.5) * 0.6;
+      const speed = 7 + Math.random() * 11;
+      return {
+        x:     cx + (Math.random() - 0.5) * 80,
+        y:     cy,
+        vx:    Math.cos(angle) * speed * 0.85,
+        vy:    Math.sin(angle) * speed - 9,
+        color: palette[Math.floor(Math.random() * palette.length)],
+        size:  3 + Math.random() * 8,
+        rot:   Math.random() * Math.PI * 2,
+        rotV:  (Math.random() - 0.5) * 0.28,
+        shape: Math.random() > 0.38 ? 'rect' : 'circle',
+        life:  1,
+        decay: 0.005 + Math.random() * 0.007,
+      };
+    });
+
+    const draw = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      let alive = false;
+      for (const p of particles) {
+        p.vy  += 0.32;
+        p.vx  *= 0.992;
+        p.x   += p.vx;
+        p.y   += p.vy;
+        p.rot += p.rotV;
+        p.life -= p.decay;
+        if (p.life > 0 && p.y < canvas.height + 40) alive = true;
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, p.life);
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot);
+        ctx.fillStyle = p.color;
+        if (p.shape === 'rect') {
+          ctx.fillRect(-p.size / 2, -p.size * 0.3, p.size, p.size * 0.55);
+        } else {
+          ctx.beginPath();
+          ctx.ellipse(0, 0, p.size * 0.45, p.size * 0.28, 0, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+      }
+      if (alive) {
+        this._confRaf = requestAnimationFrame(draw);
+      } else {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+    };
+    this._confRaf = requestAnimationFrame(draw);
+  }
+
+  _bind() {
+    const c = this._canvas;
+    if (!c) return;
+    c.addEventListener('mousedown',  this._onMD);
+    c.addEventListener('mousemove',  this._onMM);
+    c.addEventListener('mouseup',    this._onEnd);
+    c.addEventListener('mouseleave', this._onEnd);
+    c.addEventListener('touchstart', this._onTS, { passive: false });
+    c.addEventListener('touchmove',  this._onTM, { passive: false });
+    c.addEventListener('touchend',   this._onEnd);
+  }
+
+  _unbind() {
+    const c = this._canvas;
+    if (!c) return;
+    c.removeEventListener('mousedown',  this._onMD);
+    c.removeEventListener('mousemove',  this._onMM);
+    c.removeEventListener('mouseup',    this._onEnd);
+    c.removeEventListener('mouseleave', this._onEnd);
+    c.removeEventListener('touchstart', this._onTS);
+    c.removeEventListener('touchmove',  this._onTM);
+    c.removeEventListener('touchend',   this._onEnd);
+  }
+
+  _onMD = (e) => {
+    if (this.state.revealed) return;
+    this._isDrawing = true;
+    const { x, y } = this._getXY(e);
+    this._scratch(x, y);
+  };
+  _onMM = (e) => {
+    if (!this._isDrawing || this.state.revealed) return;
+    const { x, y } = this._getXY(e);
+    this._scratch(x, y);
+  };
+  _onEnd = () => { this._isDrawing = false; };
+
+  _onTS = (e) => {
+    e.preventDefault();
+    if (this.state.revealed) return;
+    this._isDrawing = true;
+    const t = e.touches[0];
+    const { x, y } = this._getXY(t);
+    this._scratch(x, y);
+  };
+  _onTM = (e) => {
+    e.preventDefault();
+    if (!this._isDrawing || this.state.revealed) return;
+    const t = e.touches[0];
+    const { x, y } = this._getXY(t);
+    this._scratch(x, y);
+  };
+
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

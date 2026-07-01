@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,400&family=Montserrat:wght@300;400;500&family=Cinzel:wght@400;500;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { background: #08070a; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+
+    @keyframes nameShimmer  { 0%,100%{filter:brightness(1)} 50%{filter:brightness(1.18)} }
+    @keyframes scrollCue    { 0%,100%{transform:translateX(-50%) translateY(0)} 50%{transform:translateX(-50%) translateY(9px)} }
+    @keyframes floatFinger  { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-9px)} }
+    @keyframes kickerPulse  { 0%,100%{opacity:.55} 50%{opacity:1} }
+    @keyframes popIn        { 0%{transform:scale(.5) translateY(12px);opacity:0} 65%{transform:scale(1.1) translateY(-4px);opacity:1} 100%{transform:scale(1) translateY(0);opacity:1} }
+    @keyframes fadeUp       { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes tapHint      { 0%,100%{opacity:.7} 50%{opacity:1} }
+
+    .section-panel { opacity: 0; transform: translateY(32px); transition: opacity .9s ease, transform .9s ease; }
+    .section-panel.visible { opacity: 1; transform: translateY(0); }
+    .countdown-card { opacity: 0; transform: translateY(36px) scale(.94); transition: opacity .75s ease, transform .75s ease; }
+    .countdown-card.visible { opacity: 1; transform: translateY(0) scale(1); }
+
+    /* ── Photo collage cards — scroll-driven ── */
+    .photo-card {
+      position: absolute;
+      background: #fdfbf7;
+      border-radius: 3px;
+      box-shadow: 0 20px 48px rgba(0,0,0,.55), 0 4px 14px rgba(0,0,0,.3);
+      padding: 10px 10px 28px;
+      opacity: 0;
+      will-change: transform, opacity;
+    }
+    .photo-card .card-label {
+      position: absolute; bottom: 6px; left: 0; right: 0;
+      text-align: center; font-family: 'Montserrat', sans-serif;
+      font-size: 9px; letter-spacing: .1em; text-transform: uppercase;
+      color: #6b5a4d; opacity: .75;
+    }
+    .photo-card--main { left: 50%; top: 50%; width: 240px; height: 310px; z-index: 5; }
+    .photo-card--1    { left: 8%;  top: 16%; width: 168px; height: 216px; }
+    .photo-card--2    { left: 31%; top: 5%;  width: 146px; height: 187px; }
+    .photo-card--3    { right: 5%; top: 9%;  width: 182px; height: 233px; }
+    .photo-card--4    { right: 11%; bottom: 6%; width: 166px; height: 211px; }
+    .photo-card--5    { left: 12%; bottom: 4%; width: 154px; height: 197px; }
+    @media (prefers-reduced-motion:reduce) {
+      .photo-card { opacity:1 !important; transform:translate(-50%,-50%) !important; }
+    }
+
+    /* ── Mobile — most guests open this on a phone ── */
+    @media (max-width: 640px) {
+      /* Countdown → clean 2×2 instead of an awkward 3+1 wrap */
+      .cd-grid { max-width: 190px; }
+
+      /* Photo collage — shrink + tuck the scattered cards so none clip off-screen */
+      .photo-card--main { width: 150px; height: 194px; }
+      .photo-card--1 { left: 1%;  top: 15%;    width: 96px;  height: 124px; }
+      .photo-card--2 { left: 31%; top: 4%;     width: 84px;  height: 108px; }
+      .photo-card--3 { right: 1%; top: 11%;    width: 104px; height: 134px; }
+      .photo-card--4 { right: 5%; bottom: 11%; width: 92px;  height: 118px; }
+      .photo-card--5 { left: 5%;  bottom: 6%;  width: 88px;  height: 112px; }
+
+      /* Trim the tall section padding so mobile isn't endless scrolling */
+      section[data-screen-label="Story"],
+      section[data-screen-label="Celebration"],
+      section[data-screen-label="Venue"] { padding: 5rem 1.5rem !important; }
+    }
+  </style>
+</helmet>
+
+<!-- ── SPARKLE BACKGROUND ── fixed, behind everything -->
+<canvas id="sparkle-canvas" style="position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:1;" aria-hidden="true"></canvas>
+
+<!-- ══════════════════════════════════════════
+     MONOGRAM REVEAL OVERLAY
+════════════════════════════════════════════ -->
+<div style="{{ curtainOverlayStyle }}" onClick="{{ handleEnter }}" ref="{{ overlayRef }}" role="button" tabIndex="0" aria-label="Tap to reveal the invitation">
+  <canvas id="mono-canvas" style="position:absolute;inset:0;width:100%;height:100%;display:block;"></canvas>
+  <img id="mono-logo-src" src="./uploads/f3f35027-bbb5-49ba-98a2-02ba2d5fb631.png" alt="" style="position:absolute;width:1px;height:1px;opacity:0;pointerEvents:none;" />
+  <p style="position:absolute;bottom:3.5rem;left:0;right:0;textAlign:center;fontFamily:'Montserrat',sans-serif;fontSize:.78rem;fontWeight:500;letterSpacing:.22em;textTransform:uppercase;color:rgba(212,175,55,.6);animation:tapHint 2.5s ease-in-out infinite;pointerEvents:none;">{{ monoHint }}</p>
+</div>
+
+<!-- ══════════════════════════════════════════
+     MAIN CONTENT
+════════════════════════════════════════════ -->
+<main style="{{ contentStyle }}" ref="{{ contentRef }}">
+
+  <!-- ── HERO ─────────────────────────────── -->
+  <header data-screen-label="Hero" style="minHeight:100vh;display:flex;flexDirection:column;alignItems:center;justifyContent:center;textAlign:center;padding:4rem 2rem;position:relative;background:linear-gradient(180deg,transparent 0%,rgba(8,7,10,0.50) 18%);">
+
+    <img src="./uploads/f3f35027-bbb5-49ba-98a2-02ba2d5fb631.png" alt="Arjita &amp; Archit monogram" style="width:60px;height:60px;marginBottom:1.1rem;opacity:.9;filter:drop-shadow(0 0 12px rgba(212,175,55,.28));" />
+
+    <h1 style="fontFamily:'Cinzel',serif;fontSize:clamp(2.5rem,7vw,5rem);fontWeight:700;lineHeight:1.2;letterSpacing:.04em;margin:1rem 0;display:flex;flexDirection:column;gap:.5rem;textTransform:uppercase;">
+      <span style="display:block;background:linear-gradient(135deg,#6b2c2c 0%,#d4816e 50%,#d4af37 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;backgroundClip:text;animation:nameShimmer 8s ease-in-out infinite;">Arjita</span>
+      <span style="display:block;fontFamily:'Cormorant Garamond',Georgia,serif;fontSize:.42em;fontStyle:italic;textTransform:none;opacity:.55;fontWeight:400;-webkit-text-fill-color:#f0e6cc;margin:.15em 0;">&amp;</span>
+      <span style="display:block;background:linear-gradient(135deg,#6b2c2c 0%,#d4816e 50%,#d4af37 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;backgroundClip:text;animation:nameShimmer 8s ease-in-out infinite 0.4s;">Archit</span>
+    </h1>
+
+    <p style="fontFamily:'Cormorant Garamond',Georgia,serif;fontSize:clamp(1.1rem,2vw,1.45rem);fontStyle:italic;color:#9a8456;margin:2rem 0;maxWidth:580px;lineHeight:1.8;">we invite you to our Roka celebration</p>
+
+    <div style="position:absolute;bottom:3.5rem;left:50%;animation:scrollCue 2s ease-in-out infinite;display:flex;flexDirection:column;alignItems:center;gap:.45rem;" aria-hidden="true">
+      <span style="fontFamily:'Montserrat',sans-serif;fontSize:.68rem;fontWeight:500;letterSpacing:.16em;textTransform:uppercase;color:rgba(212,175,55,.5);">scroll</span>
+      <div style="width:1px;height:2rem;background:linear-gradient(to bottom,transparent,#d4af37,transparent);"></div>
+    </div>
+  </header>
+
+  <!-- ── SCRATCH REVEAL ─────────────────────── -->
+  <section data-screen-label="Scratch Reveal" style="minHeight:60vh;display:flex;flexDirection:column;alignItems:center;justifyContent:center;gap:1.5rem;padding:4rem 2rem 3rem;background:rgba(8,7,10,0.50);position:relative;overflow:hidden;">
+    <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:520px;height:520px;background:radial-gradient(circle,rgba(212,175,55,.09) 0%,transparent 70%);pointerEvents:none;"></div>
+
+    <!-- kicker -->
+    <div style="display:flex;alignItems:center;gap:1.2rem;position:relative;zIndex:1;">
+      <div style="width:44px;height:1px;background:linear-gradient(to right,transparent,#d4af37,transparent);"></div>
+      <p style="fontFamily:'Montserrat',sans-serif;fontSize:.68rem;fontWeight:500;letterSpacing:.28em;textTransform:uppercase;color:#9a8456;animation:kickerPulse 2.5s ease-in-out infinite;">Scratch to reveal</p>
+      <div style="width:44px;height:1px;background:linear-gradient(to left,transparent,#d4af37,transparent);"></div>
+    </div>
+
+    <!-- card -->
+    <div id="scratch-wrap" style="position:relative;width:100%;maxWidth:520px;borderRadius:20px;overflow:hidden;border:1px solid rgba(212,175,55,.45);boxShadow:0 16px 56px rgba(42,24,16,.1),0 4px 16px rgba(42,24,16,.06);zIndex:1;">
+      <!-- cream base — what you see when scratching -->
+      <div style="background:#0c0a12;padding:48px;textAlign:center;display:flex;flexDirection:column;alignItems:center;gap:12px;minHeight:148px;justifyContent:center;">
+        <p style="fontFamily:'Montserrat',sans-serif;fontSize:.58rem;fontWeight:500;letterSpacing:.34em;textTransform:uppercase;color:rgba(212,175,55,.6);">Save the Date</p>
+        <p style="fontFamily:'Playfair Display',serif;fontSize:clamp(2rem,6vw,3rem);fontWeight:700;lineHeight:1.1;background:linear-gradient(135deg,#6b2c2c 0%,#d4816e 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;backgroundClip:text;">18 July 2026</p>
+        <p style="fontFamily:'Cormorant Garamond',Georgia,serif;fontStyle:italic;fontSize:1.1rem;color:rgba(212,175,55,.7);">Saturday · 8:00 PM onwards</p>
+      </div>
+      <!-- gold scratch layer on top -->
+      <canvas id="scratch-canvas" style="position:absolute;inset:0;cursor:crosshair;touchAction:none;display:block;"></canvas>
+    </div>
+
+    <!-- finger hint -->
+    <sc-if value="{{ showScratchHint }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;flexDirection:column;alignItems:center;gap:8px;zIndex:1;">
+        <span style="fontSize:1.7rem;animation:floatFinger 1.9s ease-in-out infinite;" aria-hidden="true">👆</span>
+        <p style="fontFamily:'Montserrat',sans-serif;fontSize:.66rem;fontWeight:500;letterSpacing:.18em;textTransform:uppercase;color:#9a8456;opacity:.5;">scratch the card</p>
+      </div>
+    </sc-if>
+
+    <!-- revealed badge -->
+    <sc-if value="{{ scratched }}" hint-placeholder-val="{{ false }}">
+      <p style="fontFamily:'Montserrat',sans-serif;fontSize:.68rem;fontWeight:500;letterSpacing:.24em;textTransform:uppercase;color:#d4af37;zIndex:1;animation:fadeUp .6s ease forwards;">✦ &nbsp;Date Revealed&nbsp; ✦</p>
+    </sc-if>
+  </section>
+
+  <!-- ══ REVEALED CONTENT — only after scratch ══ -->
+  <sc-if value="{{ scratched }}" hint-placeholder-val="{{ false }}">
+    <div style="animation:fadeUp 1.4s ease forwards;">
+
+      <!-- ── COUNTDOWN ─────────────────────────── -->
+      <section data-screen-label="Countdown" style="display:flex;flexDirection:column;alignItems:center;justifyContent:center;padding:2.5rem 2rem 4rem;background:rgba(8,7,10,0.50);position:relative;" aria-labelledby="countdown-head">
+        <p id="countdown-head" style="fontFamily:'Montserrat',sans-serif;fontSize:.68rem;fontWeight:500;letterSpacing:.22em;textTransform:uppercase;color:rgba(212,175,55,.6);marginBottom:1.75rem;">The celebration begins in</p>
+        <ol class="cd-grid" style="display:flex;gap:.75rem;flexWrap:wrap;justifyContent:center;alignItems:flex-start;listStyle:none;padding:0;" aria-label="Time remaining until the celebration">
+          <li style="display:flex;flexDirection:column;alignItems:center;gap:.5rem;">
+            <div style="width:84px;height:84px;display:flex;alignItems:center;justifyContent:center;background:#fdfbf7;borderRadius:.875rem;border:1px solid rgba(212,175,55,.3);boxShadow:0 2px 12px rgba(42,24,16,.07);">
+              <span style="fontFamily:'Playfair Display',serif;fontSize:2.2rem;fontWeight:700;lineHeight:1;background:linear-gradient(180deg,#6b2c2c 0%,#d4816e 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;backgroundClip:text;">{{ days }}</span>
+            </div>
+            <span style="fontFamily:'Montserrat',sans-serif;fontSize:.6rem;fontWeight:500;letterSpacing:.16em;textTransform:uppercase;color:rgba(212,175,55,.6);">Days</span>
+          </li>
+          <li style="display:flex;flexDirection:column;alignItems:center;gap:.5rem;">
+            <div style="width:84px;height:84px;display:flex;alignItems:center;justifyContent:center;background:#fdfbf7;borderRadius:.875rem;border:1px solid rgba(212,175,55,.3);boxShadow:0 2px 12px rgba(42,24,16,.07);">
+              <span style="fontFamily:'Playfair Display',serif;fontSize:2.2rem;fontWeight:700;lineHeight:1;background:linear-gradient(180deg,#6b2c2c 0%,#d4816e 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;backgroundClip:text;">{{ hours }}</span>
+            </div>
+            <span style="fontFamily:'Montserrat',sans-serif;fontSize:.6rem;fontWeight:500;letterSpacing:.16em;textTransform:uppercase;color:rgba(212,175,55,.6);">Hours</span>
+          </li>
+          <li style="display:flex;flexDirection:column;alignItems:center;gap:.5rem;">
+            <div style="width:84px;height:84px;display:flex;alignItems:center;justifyContent:center;background:#fdfbf7;borderRadius:.875rem;border:1px solid rgba(212,175,55,.3);boxShadow:0 2px 12px rgba(42,24,16,.07);">
+              <span style="fontFamily:'Playfair Display',serif;fontSize:2.2rem;fontWeight:700;lineHeight:1;background:linear-gradient(180deg,#6b2c2c 0%,#d4816e 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;backgroundClip:text;">{{ minutes }}</span>
+            </div>
+            <span style="fontFamily:'Montserrat',sans-serif;fontSize:.6rem;fontWeight:500;letterSpacing:.16em;textTransform:uppercase;color:rgba(212,175,55,.6);">Minutes</span>
+          </li>
+          <li style="display:flex;flexDirection:column;alignItems:center;gap:.5rem;">
+            <div style="width:84px;height:84px;display:flex;alignItems:center;justifyContent:center;background:#fdfbf7;borderRadius:.875rem;border:1px solid rgba(212,175,55,.3);boxShadow:0 2px 12px rgba(42,24,16,.07);">
+              <span style="fontFamily:'Playfair Display',serif;fontSize:2.2rem;fontWeight:700;lineHeight:1;background:linear-gradient(180deg,#6b2c2c 0%,#d4816e 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;backgroundClip:text;">{{ seconds }}</span>
+            </div>
+            <span style="fontFamily:'Montserrat',sans-serif;fontSize:.6rem;fontWeight:500;letterSpacing:.16em;textTransform:uppercase;color:rgba(212,175,55,.6);">Seconds</span>
+          </li>
+        </ol>
+        <sc-if value="{{ countdownDone }}" hint-placeholder-val="{{ false }}">
+          <p style="fontFamily:'Playfair Display',serif;fontSize:clamp(1.4rem,3vw,2rem);color:#f0e6cc;marginTop:2rem;" role="status">Cheers! 🥂 It&rsquo;s time</p>
+        </sc-if>
+      </section>
+
+  <!-- ── STORY ──────────────────────────────── -->
+  <section data-screen-label="Story" id="story" style="minHeight:80vh;display:flex;alignItems:center;justifyContent:center;padding:8rem 2rem;background:rgba(14,11,20,0.50);">
+    <article class="section-panel" style="maxWidth:720px;width:100%;textAlign:center;">
+      <div style="display:flex;alignItems:center;justifyContent:center;gap:1.5rem;marginBottom:2rem;">
+        <span style="width:56px;height:1px;background:linear-gradient(to right,transparent,#d4af37,transparent);display:block;"></span>
+        <p style="fontFamily:'Montserrat',sans-serif;fontSize:.68rem;fontWeight:500;letterSpacing:.26em;textTransform:uppercase;color:#c8a84e;opacity:.9;">How it began</p>
+        <span style="width:56px;height:1px;background:linear-gradient(to left,transparent,#d4af37,transparent);display:block;"></span>
+      </div>
+      <h2 style="fontFamily:'Playfair Display',serif;fontSize:clamp(2.4rem,5vw,3.8rem);fontWeight:700;lineHeight:1.2;color:#f0e6cc;margin:2rem 0 2.5rem;">Two hearts, one yes</h2>
+      <p style="fontFamily:'Cormorant Garamond',Georgia,serif;fontSize:clamp(1.1rem,2vw,1.35rem);lineHeight:1.95;color:#9a8456;maxWidth:540px;margin:0 auto;">From first hellos to forever — every chapter led us here. Come raise a glass to the beginning of ours.</p>
+    </article>
+  </section>
+
+  <!-- ── PHOTO COLLAGE — scroll-driven ────── -->
+  <div id="photo-collage-wrap" style="height:280vh;position:relative;background:rgba(4,3,9,0.50);">
+    <section data-screen-label="Photo Collage" style="position:sticky;top:0;height:100vh;display:flex;flexDirection:column;alignItems:center;justifyContent:center;overflow:hidden;background:rgba(4,3,9,0.50);">
+
+      <x-import component-from-global-scope="image-slot" from="./image-slot.js" hint-size="1px,1px"></x-import>
+
+      <!-- eyebrow -->
+      <div style="display:flex;alignItems:center;gap:1.2rem;marginBottom:2rem;position:relative;zIndex:2;">
+        <div style="width:40px;height:1px;background:linear-gradient(to right,transparent,rgba(212,175,55,.5));"></div>
+        <p style="fontFamily:'Montserrat',sans-serif;fontSize:.68rem;fontWeight:500;letterSpacing:.26em;textTransform:uppercase;color:rgba(212,175,55,.75);">Their story in frames</p>
+        <div style="width:40px;height:1px;background:linear-gradient(to left,transparent,rgba(212,175,55,.5));"></div>
+      </div>
+
+      <!-- card stage — cards fade & settle in on scroll progress -->
+      <div id="photo-stage" style="position:relative;width:min(94vw,980px);height:min(80vh,620px);">
+
+        <div class="photo-card photo-card--1" data-card="1">
+          <image-slot id="photo-1" placeholder="Photo 1" shape="rect" style="width:100%;height:100%;display:block;"></image-slot>
+          <span class="card-label">save the date</span>
+        </div>
+        <div class="photo-card photo-card--2" data-card="2">
+          <image-slot id="photo-2" placeholder="Photo 2" shape="rect" style="width:100%;height:100%;display:block;"></image-slot>
+        </div>
+        <div class="photo-card photo-card--3" data-card="3">
+          <image-slot id="photo-3" placeholder="Photo 3" shape="rect" style="width:100%;height:100%;display:block;"></image-slot>
+        </div>
+        <div class="photo-card photo-card--4" data-card="4">
+          <image-slot id="photo-4" placeholder="Photo 4" shape="rect" style="width:100%;height:100%;display:block;"></image-slot>
+        </div>
+        <div class="photo-card photo-card--5" data-card="5">
+          <image-slot id="photo-5" placeholder="Photo 5" shape="rect" style="width:100%;height:100%;display:block;"></image-slot>
+        </div>
+        <div class="photo-card photo-card--main" data-card="main">
+          <image-slot id="photo-main" placeholder="Couple photo" shape="rect" style="width:100%;height:100%;display:block;"></image-slot>
+          <span class="card-label">Arjita &amp; Archit</span>
+        </div>
+      </div>
+
+    </section>
+  </div>
+
+  <!-- ── CELEBRATION ──────────────────────── -->
+  <section data-screen-label="Celebration" id="celebration" style="minHeight:80vh;display:flex;alignItems:center;justifyContent:center;padding:8rem 2rem;background:rgba(8,7,10,0.50);">
+    <article class="section-panel" style="maxWidth:720px;width:100%;textAlign:center;">
+      <div style="display:flex;alignItems:center;justifyContent:center;gap:1.5rem;marginBottom:2rem;">
+        <span style="width:56px;height:1px;background:linear-gradient(to right,transparent,#d4af37,transparent);display:block;"></span>
+        <p style="fontFamily:'Montserrat',sans-serif;fontSize:.68rem;fontWeight:500;letterSpacing:.26em;textTransform:uppercase;color:#c8a84e;opacity:.9;">The celebration</p>
+        <span style="width:56px;height:1px;background:linear-gradient(to left,transparent,#d4af37,transparent);display:block;"></span>
+      </div>
+      <h2 style="fontFamily:'Playfair Display',serif;fontSize:clamp(2.4rem,5vw,3.8rem);fontWeight:700;lineHeight:1.2;color:#f0e6cc;margin:2rem 0 2.5rem;">Roka Celebration</h2>
+      <p style="fontFamily:'Cormorant Garamond',Georgia,serif;fontSize:clamp(1.1rem,2vw,1.35rem);lineHeight:1.95;color:#9a8456;maxWidth:540px;margin:0 auto;">An evening of toasts, music and mischief as Arjita &amp; Archit say their very first yes. Expect clinking glasses, good company and a dance floor that refuses to quit.</p>
+    </article>
+  </section>
+
+  <!-- ── VENUE ─────────────────────────────── -->
+  <section data-screen-label="Venue" id="venue" style="minHeight:80vh;display:flex;alignItems:center;justifyContent:center;padding:8rem 2rem;background:rgba(14,11,20,0.50);">
+    <article class="section-panel" style="maxWidth:720px;width:100%;textAlign:center;">
+      <div style="display:flex;alignItems:center;justifyContent:center;gap:1.5rem;marginBottom:2rem;">
+        <span style="width:56px;height:1px;background:linear-gradient(to right,transparent,#d4af37,transparent);display:block;"></span>
+        <p style="fontFamily:'Montserrat',sans-serif;fontSize:.68rem;fontWeight:500;letterSpacing:.26em;textTransform:uppercase;color:#c8a84e;opacity:.9;">Where</p>
+        <span style="width:56px;height:1px;background:linear-gradient(to left,transparent,#d4af37,transparent);display:block;"></span>
+      </div>
+      <h2 style="fontFamily:'Playfair Display',serif;fontSize:clamp(2.4rem,5vw,3.8rem);fontWeight:700;lineHeight:1.2;color:#f0e6cc;margin:2rem 0 2.5rem;">[ Venue Name ]</h2>
+      <div style="marginTop:1.5rem;padding:2.5rem 3rem;background:linear-gradient(135deg,rgba(212,175,55,.12),rgba(180,140,20,.08));borderRadius:1.25rem;border:1px solid rgba(212,175,55,.22);display:inline-block;width:100%;">
+        <h3 style="fontFamily:'Playfair Display',serif;fontSize:clamp(1.6rem,3vw,2.2rem);fontWeight:600;color:#f0e6cc;marginBottom:.75rem;">[ Venue Name ]</h3>
+        <p style="fontFamily:'Montserrat',sans-serif;fontSize:.95rem;lineHeight:1.65;color:#9a8456;marginBottom:.5rem;">[ Address line · City ]</p>
+        <p style="fontFamily:'Cormorant Garamond',Georgia,serif;fontSize:.95rem;fontStyle:italic;color:#c8a84e;opacity:.9;">[ Nearest landmark ]</p>
+      </div>
+
+      <!-- ── decorative 3D venue map — tap anywhere opens turn-by-turn directions ── -->
+      <div id="venue-3d-wrap" style="position:relative;width:100%;height:360px;marginTop:2rem;borderRadius:16px;overflow:hidden;cursor:pointer;border:1px solid rgba(212,175,55,.22);">
+        <div id="venue-3d-map" style="position:absolute;inset:0;"></div>
+        <div id="venue-3d-tap" style="position:absolute;inset:0;zIndex:2;"></div>
+        <div style="position:absolute;left:12px;bottom:12px;zIndex:3;background:rgba(0,0,0,0.55);color:#fff;padding:6px 12px;borderRadius:999px;fontSize:13px;pointerEvents:none;">Tap for directions ↗</div>
+      </div>
+    </article>
+  </section>
+
+      <!-- ── FOOTER ────────────────────────────── -->
+      <footer style="padding:8rem 2rem 5rem;textAlign:center;background:rgba(14,11,20,0.50);">
+        <div style="display:flex;alignItems:center;gap:1rem;justifyContent:center;marginBottom:3rem;">
+          <div style="flex:1;maxWidth:160px;height:1px;background:linear-gradient(to right,transparent,rgba(212,175,55,.4));"></div>
+          <div style="width:6px;height:6px;background:#d4af37;transform:rotate(45deg);borderRadius:1px;"></div>
+          <div style="flex:1;maxWidth:160px;height:1px;background:linear-gradient(to left,transparent,rgba(212,175,55,.4));"></div>
+        </div>
+        <p style="fontFamily:'Montserrat',sans-serif;fontSize:.84rem;fontWeight:500;letterSpacing:.12em;color:#d4af37;marginBottom:1rem;">#ArjitaAndArchit</p>
+        <p style="fontFamily:'Cormorant Garamond',Georgia,serif;fontSize:1.1rem;fontStyle:italic;color:#9a8456;">With love, Arjita &amp; Archit</p>
+      </footer>
+
+    </div>
+  </sc-if>
+
+</main>
+
+<!-- ── CONFETTI ── -->
+<canvas id="confetti-canvas" style="position:fixed;inset:0;pointerEvents:none;zIndex:9999;width:100vw;height:100vh;" aria-hidden="true"></canvas>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const VENUE = { lat: 28.4972288, lng: 77.4260525, label: 'Saratoga, Sector 143B, Noida' }
+
+class Component extends DCLogic {
+  state = {
+    entered: false, monoFormed: false,
+    days: 0, hours: 0, minutes: 0, seconds: 0, countdownDone: false,
+    scratched: false,
+  }
+
+  _countdownId      = null
+  _confRaf          = null
+  _sparkleRaf       = null
+  _sparkleCtx       = null
+  _sparkleW         = 0
+  _sparkleH         = 0
+  _sparkleParticles = null
+  _sparkleResizeFn  = null
+  _scrCanvas    = null
+  _scrCtx       = null
+  _scrW         = 0
+  _scrH         = 0
+  _scrDpr       = 1
+  _scrDrawing   = false
+  _scrLastCheck = 0
+  _resizeTimer  = null
+
+  _monoRaf         = null
+  _monoCtx         = null
+  _monoW           = 0
+  _monoH           = 0
+  _monoBox         = 260
+  _monoCx          = 0
+  _monoCy          = 0
+  _monoParticles   = null
+  _monoFormedTimer = null
+  _monoImg         = null
+  _monoCrispAlpha  = 0
+  _overlayEl       = null
+  _contentEl       = null
+  _overlayAlpha    = 1
+  _contentAlpha    = 0
+  _overlayFadeAt   = Infinity
+  _contentFadeAt   = Infinity
+
+  _map3D = null
+
+  // ── lifecycle ─────────────────────────────────────
+  componentDidMount() {
+    this._startCountdown()
+    this._scheduleInitScratch()
+    this._observeSections()
+    this._initSparkles()
+    this._initMonoCanvas()
+    this._loadMonogramArt()
+    window.addEventListener('resize', this._onResize)
+    document.body.style.overflow = 'hidden'
+
+    // ── venue 3D map — tap layer wired first so it still works if the map fails to load ──
+    const tap = document.getElementById('venue-3d-tap')
+    if (tap) tap.addEventListener('click', () => this._openInMaps())
+    this._initVenue3D()
+  }
+
+  componentWillUnmount() {
+    cancelAnimationFrame(this._sparkleRaf)
+    if (this._sparkleResizeFn) window.removeEventListener('resize', this._sparkleResizeFn)
+    clearInterval(this._countdownId)
+    cancelAnimationFrame(this._confRaf)
+    if (this._monoRaf) cancelAnimationFrame(this._monoRaf)
+    clearTimeout(this._monoFormedTimer)
+    clearTimeout(this._resizeTimer)
+    window.removeEventListener('resize', this._onResize)
+    if (this._photoScrollFn) window.removeEventListener('scroll', this._photoScrollFn)
+    if (this._map3D) { this._map3D.remove(); this._map3D = null }
+    document.body.style.overflow = ''
+  }
+
+  // ── venue 3D map — decorative, non-interactive view; tap anywhere opens
+  // turn-by-turn directions in the native maps app instead of fighting
+  // Map3DElement's own gesture/camera controls ──
+  async _initVenue3D() {
+    try {
+      await this._loadGoogleMaps('YOUR_API_KEY')
+      const { Map3DElement, MapMode } = await google.maps.importLibrary('maps3d')
+      const map3D = new Map3DElement({
+        center: { lat: VENUE.lat, lng: VENUE.lng, altitude: 200 },
+        range: 600, tilt: 67, heading: 30,
+        mode: MapMode.HYBRID, // REQUIRED — omitting it causes an infinite loading spinner
+      })
+      map3D.style.width = '100%'; map3D.style.height = '100%'
+      const host = document.getElementById('venue-3d-map')
+      if (host) host.appendChild(map3D)
+      this._map3D = map3D
+    } catch (e) {
+      console.warn('[venue-3d] map failed to load — tap-to-directions still works:', e)
+    }
+  }
+
+  _openInMaps() {
+    const { lat, lng } = VENUE
+    const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent || '')
+    const url = isIOS
+      ? `https://maps.apple.com/?daddr=${lat},${lng}`
+      : `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`
+    window.open(url, '_blank', 'noopener')
+  }
+
+  _loadGoogleMaps(apiKey) {
+    if (window.google?.maps) return Promise.resolve()
+    return new Promise((resolve, reject) => {
+      const s = document.createElement('script')
+      s.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&v=alpha&libraries=maps3d`
+      s.async = true; s.onload = resolve
+      s.onerror = () => reject(new Error('Google Maps failed to load'))
+      document.head.appendChild(s)
+    })
+  }
+
+  // ── scroll-reveal for section-panel / countdown-card ─
+  _observeSections() {
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible') })
+    }, { threshold: 0.22 })
+    setTimeout(() => {
+      document.querySelectorAll('.section-panel, .countdown-card, .photo-stage').forEach(el => io.observe(el))
+    }, 200)
+  }
+
+  // ── countdown ─────────────────────────────────────
+  _computeRemaining() {
+    const diff = new Date('2026-07-18T20:00:00+05:30').getTime() - Date.now()
+    if (isNaN(diff) || diff <= 0) return { days:0, hours:0, minutes:0, seconds:0, done:true }
+    const t = Math.floor(diff / 1000)
+    return { days: Math.floor(t/86400), hours: Math.floor((t%86400)/3600), minutes: Math.floor((t%3600)/60), seconds: t%60, done:false }
+  }
+
+  _startCountdown() {
+    const tick = () => {
+      const r = this._computeRemaining()
+      this.setState({ days:r.days, hours:r.hours, minutes:r.minutes, seconds:r.seconds, countdownDone:r.done })
+      if (r.done) { clearInterval(this._countdownId); this._countdownId = null }
+    }
+    tick()
+    this._countdownId = setInterval(tick, 1000)
+  }
+
+  handleEnter = () => {
+    if (this.state.entered) return
+    const now = performance.now()
+    this._overlayFadeAt = now + 1300
+    this._contentFadeAt = now + 850
+    const parts = this._monoParticles || []
+    parts.forEach((p) => {
+      const cur = this._particleNow(p, now)
+      p.sx = cur.x; p.sy = cur.y; p.sa = cur.a
+      const ang = Math.random() * Math.PI * 2
+      const rad = Math.max(this._monoW, this._monoH) * (0.5 + Math.random() * 0.6)
+      p.tx = this._monoCx + Math.cos(ang) * rad
+      p.ty = this._monoCy + Math.sin(ang) * rad
+      p.ta = 0
+      p.dur = 1150 + Math.random() * 350
+      p.burst = true
+      p.segStart = now
+    })
+    this.setState({ entered: true, monoFormed: false })
+    document.body.style.overflow = ''
+  }
+
+  // ── monogram reveal — assembles from the couple's own logo, then bursts open ──
+  _initMonoCanvas() {
+    const canvas = document.getElementById('mono-canvas')
+    if (!canvas) return
+    const dpr = Math.min(window.devicePixelRatio || 1, 2)
+    const w = window.innerWidth, h = window.innerHeight
+    this._monoW = w; this._monoH = h
+    this._monoBox = Math.max(200, Math.min(360, Math.min(w, h) * 0.5))
+    this._monoCx = w / 2
+    this._monoCy = h * 0.44
+    canvas.width = w * dpr
+    canvas.height = h * dpr
+    canvas.style.width = w + 'px'
+    canvas.style.height = h + 'px'
+    const ctx = canvas.getContext('2d')
+    ctx.setTransform(1, 0, 0, 1, 0, 0)
+    ctx.scale(dpr, dpr)
+    this._monoCtx = ctx
+    if (this._monoImg) this._seedMonogram()
+    if (!this._monoRaf) this._monoRaf = requestAnimationFrame(this.monoLoop)
+  }
+
+  _loadMonogramArt() {
+    if (this._monoImg) { this._seedMonogram(); return }
+    const img = document.getElementById('mono-logo-src')
+    if (!img) { setTimeout(() => this._loadMonogramArt(), 50); return }
+    if (img.complete && img.naturalWidth > 0) {
+      this._monoImg = img
+      this._seedMonogram()
+    } else {
+      img.addEventListener('load', () => { this._monoImg = img; this._seedMonogram() }, { once: true })
+    }
+  }
+
+  _buildMonogramTargets(w, h) {
+    const off = document.createElement('canvas')
+    off.width = w; off.height = h
+    const octx = off.getContext('2d')
+    octx.clearRect(0, 0, w, h)
+    if (this._monoImg) {
+      octx.drawImage(this._monoImg, this._monoCx - this._monoBox / 2, this._monoCy - this._monoBox / 2, this._monoBox, this._monoBox)
+    }
+    const data = octx.getImageData(0, 0, w, h).data
+    const pts = []
+    const step = 2
+    for (let y = 0; y < h; y += step) {
+      for (let x = 0; x < w; x += step) {
+        if (data[(y * w + x) * 4 + 3] > 100) pts.push({ x, y })
+      }
+    }
+    for (let i = pts.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1))
+      const tmp = pts[i]; pts[i] = pts[j]; pts[j] = tmp
+    }
+    return pts.slice(0, 800)
+  }
+
+  _seedMonogram() {
+    const w = this._monoW, h = this._monoH
+    if (!w || !h) return
+    const targets = this._buildMonogramTargets(w, h)
+    const now = performance.now()
+    this._monoParticles = targets.map((pt) => ({
+      assembleX: pt.x, assembleY: pt.y,
+      sx: Math.random() * w, sy: Math.random() * h, sa: 0,
+      tx: pt.x, ty: pt.y, ta: 1,
+      segStart: now, wob: Math.random() * Math.PI * 2, size: 1.1 + Math.random() * 1.5,
+      dur: 1000 + Math.random() * 500, burst: false,
+    }))
+    this._scheduleFormed(1350)
+  }
+
+  _scheduleFormed(delay) {
+    clearTimeout(this._monoFormedTimer)
+    this._monoFormedTimer = setTimeout(() => this.setState({ monoFormed: true }), delay)
+  }
+
+  _easeOutCubic(t) { return 1 - Math.pow(1 - t, 3) }
+  _easeOutExpo(t) { return t >= 1 ? 1 : 1 - Math.pow(2, -10 * t) }
+
+  _particleNow(p, now) {
+    const dur = p.dur || 900
+    const t = Math.max(0, Math.min(1, (now - p.segStart) / dur))
+    const e = p.burst ? this._easeOutExpo(t) : this._easeOutCubic(t)
+    return { x: p.sx + (p.tx - p.sx) * e, y: p.sy + (p.ty - p.sy) * e, a: p.sa + (p.ta - p.sa) * e, t }
+  }
+
+  monoLoop = () => {
+    const now = performance.now()
+
+    // overlay fade-out + content fade-in — driven imperatively (not CSS transitions)
+    // so they can't be interrupted by this same continuously-running loop
+    if (now >= this._overlayFadeAt) {
+      this._overlayAlpha += (0 - this._overlayAlpha) * 0.11
+      if (this._overlayAlpha < 0.004) this._overlayAlpha = 0
+    }
+    if (this._overlayEl) {
+      this._overlayEl.style.opacity = String(this._overlayAlpha)
+      this._overlayEl.style.pointerEvents = this.state.entered ? 'none' : 'all'
+    }
+    if (now >= this._contentFadeAt) {
+      this._contentAlpha += (1 - this._contentAlpha) * 0.045
+      if (this._contentAlpha > 0.996) this._contentAlpha = 1
+    }
+    if (this._contentEl) this._contentEl.style.opacity = String(this._contentAlpha)
+
+    const ctx = this._monoCtx
+    if (ctx && this._monoParticles) {
+      const formed = this.state.monoFormed
+      const targetCrisp = formed ? 1 : 0
+      this._monoCrispAlpha += (targetCrisp - this._monoCrispAlpha) * 0.05
+      if (Math.abs(targetCrisp - this._monoCrispAlpha) < 0.004) this._monoCrispAlpha = targetCrisp
+      ctx.clearRect(0, 0, this._monoW, this._monoH)
+      for (const p of this._monoParticles) {
+        const r = this._particleNow(p, now)
+        let dx = r.x, dy = r.y
+        if (r.t >= 1 && !p.burst) {
+          const wob = now * 0.0016 + p.wob
+          dx += Math.sin(wob) * 2.4
+          dy += Math.cos(wob * 0.8) * 2.4
+        }
+        const dim = (formed && !p.burst && r.t >= 1) ? 0.4 : 1
+        const sizeMul = (p.burst && r.t < 1) ? 1.5 : 1
+        if (r.a > 0.01) {
+          ctx.save()
+          ctx.globalAlpha = Math.max(0, Math.min(1, r.a)) * dim
+          ctx.fillStyle = '#e8c97a'
+          ctx.beginPath()
+          ctx.arc(dx, dy, p.size * sizeMul, 0, Math.PI * 2)
+          ctx.fill()
+          ctx.restore()
+        }
+      }
+      if (this._monoCrispAlpha > 0.01 && this._monoImg) {
+        ctx.save()
+        ctx.globalAlpha = this._monoCrispAlpha
+        ctx.drawImage(this._monoImg, this._monoCx - this._monoBox / 2, this._monoCy - this._monoBox / 2, this._monoBox, this._monoBox)
+        ctx.restore()
+      }
+    }
+
+    // once fully settled post-reveal, stop the loop (sparkle bg keeps its own going)
+    if (this.state.entered && this._overlayAlpha === 0 && this._contentAlpha === 1) {
+      this._monoRaf = null
+      return
+    }
+    this._monoRaf = requestAnimationFrame(this.monoLoop)
+  }
+
+  // ── sparkle background — cocktail party vibes ────
+  _initSparkles() {
+    const canvas = document.getElementById('sparkle-canvas')
+    if (!canvas) return
+    canvas.width = window.innerWidth; canvas.height = window.innerHeight
+    this._sparkleCtx = canvas.getContext('2d')
+    this._sparkleW = window.innerWidth; this._sparkleH = window.innerHeight
+    const gold = ['#d4af37','#f0d060','#c8a84e','#e8c97a','#f5e090','#b8941f']
+    const W = window.innerWidth, H = window.innerHeight
+    const rn = (a,b) => a + Math.random()*(b-a)
+
+    this._sparkleParticles = [
+      // ── champagne bubbles — rise upward with gentle sway
+      ...Array.from({length:55}, () => ({
+        type:'bubble',
+        x:rn(0,W), y:rn(0,H),
+        vy:-(rn(.25,.85)),
+        wobble:rn(0,Math.PI*2), wobbleSpd:rn(.012,.038),
+        r:rn(2.5,8),
+        color:gold[Math.floor(rn(0,gold.length))],
+        alpha:rn(.3,.72), aDir:1, aSpd:rn(.003,.007),
+      })),
+      // ── gold leaf flakes — drift slowly downward, spin
+      ...Array.from({length:55}, () => ({
+        type:'flake',
+        x:rn(0,W), y:rn(0,H),
+        vx:rn(-.45,.45), vy:rn(.18,.5),
+        rot:rn(0,Math.PI*2), rotV:rn(-.04,.04),
+        w:rn(6,16), h:rn(2,4.5),
+        color:gold[Math.floor(rn(0,gold.length))],
+        alpha:rn(.4,.82), aDir:1, aSpd:rn(.003,.007),
+      })),
+      // ── 4-point star sparkles
+      ...Array.from({length:32}, () => ({
+        type:'star',
+        x:rn(0,W), y:rn(0,H),
+        vx:rn(-.28,.28), vy:rn(.18,.48),
+        rot:rn(0,Math.PI*2), rotV:rn(-.022,.022),
+        size:rn(6,15),
+        color:gold[Math.floor(rn(0,gold.length))],
+        alpha:rn(.45,.88), aDir:1, aSpd:rn(.003,.008),
+      })),
+      // ── soft bokeh orbs — candlelight glow, barely drift
+      ...Array.from({length:14}, () => ({
+        type:'bokeh',
+        x:rn(0,W), y:rn(0,H),
+        vx:rn(-.1,.1), vy:rn(-.1,.1),
+        r:rn(28,72),
+        color:gold[Math.floor(rn(0,gold.length))],
+        alpha:rn(.05,.14), aDir:1, aSpd:rn(.001,.003),
+      })),
+    ]
+
+    const draw = () => {
+      const ctx = this._sparkleCtx; if (!ctx) return
+      const W = this._sparkleW, H = this._sparkleH
+      ctx.clearRect(0,0,W,H)
+      for (const p of this._sparkleParticles) {
+        p.alpha += p.aDir * p.aSpd
+        if (p.alpha > .9 || p.alpha < .04) p.aDir *= -1
+
+        if (p.type === 'bubble') {
+          p.wobble += p.wobbleSpd
+          p.x += Math.sin(p.wobble) * .45
+          p.y += p.vy
+          if (p.y < -p.r*3) { p.y = H + p.r; p.x = Math.random()*W }
+          ctx.save(); ctx.globalAlpha = Math.max(0, p.alpha) * 0.65
+          // ring
+          ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2)
+          ctx.strokeStyle = p.color; ctx.lineWidth = 1.3; ctx.stroke()
+          // inner glow fill
+          const bg = ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r)
+          bg.addColorStop(0,'rgba(245,224,144,.12)'); bg.addColorStop(1,'transparent')
+          ctx.fillStyle = bg; ctx.fill()
+          // highlight dot
+          ctx.beginPath(); ctx.arc(p.x - p.r*.32, p.y - p.r*.32, p.r*.22, 0, Math.PI*2)
+          ctx.fillStyle = 'rgba(255,255,255,.52)'; ctx.fill()
+          ctx.restore()
+
+        } else if (p.type === 'flake') {
+          p.x += p.vx; p.y += p.vy; p.rot += p.rotV
+          if (p.y > H+12) { p.y=-12; p.x=Math.random()*W }
+          if (p.x < -12) p.x=W+12; if (p.x > W+12) p.x=-12
+          ctx.save(); ctx.globalAlpha = Math.max(0, p.alpha) * 0.65
+          ctx.fillStyle = p.color; ctx.translate(p.x,p.y); ctx.rotate(p.rot)
+          ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h)
+          // subtle shimmer line
+          ctx.fillStyle = 'rgba(255,255,255,.28)'
+          ctx.fillRect(-p.w/2, -p.h/6, p.w, p.h*.3)
+          ctx.restore()
+
+        } else if (p.type === 'star') {
+          p.x += p.vx; p.y += p.vy; p.rot += p.rotV
+          if (p.y > H+12) { p.y=-12; p.x=Math.random()*W }
+          if (p.x < -12) p.x=W+12; if (p.x > W+12) p.x=-12
+          ctx.save(); ctx.globalAlpha = Math.max(0, p.alpha) * 0.65
+          ctx.fillStyle = p.color; ctx.translate(p.x,p.y); ctx.rotate(p.rot)
+          ctx.beginPath()
+          for (let i=0;i<4;i++) {
+            const a=(i*Math.PI/2)-Math.PI/4, b=a+Math.PI/4
+            ctx.lineTo(Math.cos(a)*p.size, Math.sin(a)*p.size)
+            ctx.lineTo(Math.cos(b)*p.size*.2, Math.sin(b)*p.size*.2)
+          }
+          ctx.closePath(); ctx.fill()
+          ctx.restore()
+
+        } else if (p.type === 'bokeh') {
+          p.x += p.vx; p.y += p.vy
+          if (p.x < -p.r) p.x=W+p.r; if (p.x > W+p.r) p.x=-p.r
+          if (p.y < -p.r) p.y=H+p.r; if (p.y > H+p.r) p.y=-p.r
+          ctx.save(); ctx.globalAlpha = Math.max(0, p.alpha) * 0.65
+          const rg = ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r)
+          rg.addColorStop(0, p.color); rg.addColorStop(1,'transparent')
+          ctx.fillStyle = rg; ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill()
+          ctx.restore()
+        }
+      }
+      this._sparkleRaf = requestAnimationFrame(draw)
+    }
+    this._sparkleRaf = requestAnimationFrame(draw)
+    this._sparkleResizeFn = () => {
+      canvas.width=window.innerWidth; canvas.height=window.innerHeight
+      this._sparkleW=window.innerWidth; this._sparkleH=window.innerHeight
+    }
+    window.addEventListener('resize',this._sparkleResizeFn)
+  }
+
+  // ── scratch canvas ────────────────────────────────
+  _scheduleInitScratch() {
+    requestAnimationFrame(() => this._initScratch())
+    window.addEventListener('resize', this._onResize)
+  }
+
+  _onResize = () => {
+    clearTimeout(this._resizeTimer)
+    this._resizeTimer = setTimeout(() => {
+      if (!this.state.scratched) this._initScratch()
+      if (!this.state.entered) this._initMonoCanvas()
+    }, 200)
+  }
+
+  _initScratch() {
+    const canvas = document.getElementById('scratch-canvas')
+    const wrap   = document.getElementById('scratch-wrap')
+    if (!canvas || !wrap) return
+    const rect = wrap.getBoundingClientRect()
+    if (rect.width === 0) return
+    const dpr = Math.min(window.devicePixelRatio || 1, 2)
+    const w = rect.width, h = rect.height
+    this._scrDpr = dpr; this._scrW = w; this._scrH = h
+    canvas.width = w * dpr; canvas.height = h * dpr
+    canvas.style.width = w + 'px'; canvas.style.height = h + 'px'
+    this._scrCanvas = canvas
+    const ctx = canvas.getContext('2d')
+    ctx.scale(dpr, dpr)
+    this._scrCtx = ctx
+    this._drawScratchSurface()
+    this._unbindScratch()
+    this._bindScratch()
+  }
+
+  _drawScratchSurface() {
+    const ctx = this._scrCtx, w = this._scrW, h = this._scrH
+    if (!ctx) return
+    const g = ctx.createLinearGradient(0,0,w,h)
+    g.addColorStop(0,'#9a6f10'); g.addColorStop(0.25,'#d4af37')
+    g.addColorStop(0.5,'#f0d060'); g.addColorStop(0.75,'#d4af37'); g.addColorStop(1,'#b8941f')
+    ctx.fillStyle = g; ctx.fillRect(0,0,w,h)
+    for (let x=0; x<=w; x+=5) {
+      ctx.fillStyle = x%10===0 ? 'rgba(255,255,255,0.13)' : 'rgba(0,0,0,0.05)'
+      ctx.fillRect(x,0,1,h)
+    }
+    const s = ctx.createLinearGradient(0,h*.25,0,h*.75)
+    s.addColorStop(0,'rgba(255,255,255,0)'); s.addColorStop(0.5,'rgba(255,255,255,0.14)'); s.addColorStop(1,'rgba(255,255,255,0)')
+    ctx.fillStyle = s; ctx.fillRect(0,0,w,h)
+    ctx.textAlign='center'; ctx.textBaseline='middle'
+    ctx.font="500 11px 'Montserrat',sans-serif"; ctx.fillStyle='rgba(42,24,16,0.38)'
+    ctx.fillText('✦   SCRATCH TO REVEAL   ✦', w/2, h/2)
+  }
+
+  _getXY(e) {
+    const r = this._scrCanvas.getBoundingClientRect()
+    return { x: e.clientX - r.left, y: e.clientY - r.top }
+  }
+
+  _doScratch(x,y) {
+    const ctx = this._scrCtx
+    if (!ctx || this.state.scratched) return
+    ctx.save(); ctx.globalCompositeOperation='destination-out'
+    ctx.beginPath(); ctx.arc(x,y,32,0,Math.PI*2); ctx.fill()
+    const rg = ctx.createRadialGradient(x,y,18,x,y,46)
+    rg.addColorStop(0,'rgba(0,0,0,1)'); rg.addColorStop(1,'rgba(0,0,0,0)')
+    ctx.fillStyle=rg; ctx.beginPath(); ctx.arc(x,y,46,0,Math.PI*2); ctx.fill()
+    ctx.restore()
+    const now = Date.now()
+    if (now - this._scrLastCheck > 180) { this._scrLastCheck=now; this._checkPercent() }
+  }
+
+  _checkPercent() {
+    if (this.state.scratched || !this._scrCanvas || !this._scrCtx) return
+    const d = this._scrCtx.getImageData(0,0,this._scrCanvas.width,this._scrCanvas.height).data
+    let clear=0; for (let i=3;i<d.length;i+=4) if (d[i]<128) clear++
+    if (clear/(d.length/4) >= 0.42) this._triggerReveal()
+  }
+
+  // ── photo collage scroll ─────────────────────────
+  _initPhotoScroll() {
+    const wrap = document.getElementById('photo-collage-wrap')
+    if (!wrap) { setTimeout(() => this._initPhotoScroll(), 150); return }
+    this._photoWrap = wrap
+    this._photoScrollFn = () => this._onPhotoScroll()
+    window.addEventListener('scroll', this._photoScrollFn, { passive: true })
+    this._onPhotoScroll()
+  }
+
+  _onPhotoScroll() {
+    const wrap = this._photoWrap
+    if (!wrap) return
+    const rect = wrap.getBoundingClientRect()
+    const scrollable = wrap.offsetHeight - window.innerHeight
+    const progress = Math.max(0, Math.min(1, -rect.top / scrollable))
+    this._updatePhotoCards(progress)
+  }
+
+  _updatePhotoCards(p) {
+    const eo = t => 1 - Math.pow(1 - Math.max(0, Math.min(1, t)), 3)
+    const ph = (t, a, b) => eo((t - a) / (b - a))
+    // main settles first, surrounding cards cascade in staggered
+    const defs = [
+      { sel:'--main', rot:0,   start:0.00, end:0.28, main:true },
+      { sel:'--1',    rot:-9,  start:0.10, end:0.42 },
+      { sel:'--2',    rot:-4,  start:0.20, end:0.52 },
+      { sel:'--3',    rot:7,   start:0.30, end:0.62 },
+      { sel:'--4',    rot:5,   start:0.40, end:0.72 },
+      { sel:'--5',    rot:-6,  start:0.50, end:0.82 },
+    ]
+    defs.forEach(({ sel, rot, start, end, main }) => {
+      const el = document.querySelector('.photo-card' + sel)
+      if (!el) return
+      const prog = ph(p, start, end)
+      const dy  = -40 * (1 - prog)      // drops down from above
+      const sc  = 0.92 + 0.08 * prog    // scales up to full size
+      const rz  = rot * prog            // settles into resting tilt
+      const pre = main ? 'translate(-50%,-50%) ' : ''
+      el.style.transform = pre + 'translateY(' + dy + 'px) rotate(' + rz + 'deg) scale(' + sc + ')'
+      el.style.opacity   = String(prog)
+    })
+  }
+
+  _triggerReveal() {
+    if (this.state.scratched) return
+    this.setState({ scratched: true })
+    setTimeout(() => this._observeSections(), 150)
+    setTimeout(() => this._initPhotoScroll(), 250)
+    const c = this._scrCanvas
+    if (c) { c.style.transition='opacity .9s ease'; c.style.opacity='0'; setTimeout(()=>{c.style.pointerEvents='none'},900) }
+    this._launchConfetti()
+  }
+
+  _launchConfetti() {
+    const canvas = document.getElementById('confetti-canvas')
+    if (!canvas) return
+    canvas.width=window.innerWidth; canvas.height=window.innerHeight
+    const ctx = canvas.getContext('2d')
+    const pal = ['#d4af37','#f0d060','#b8941f','#6b2c2c','#d4816e','#ff8fb4','#fdfbf7']
+    const cx=window.innerWidth*.5, cy=window.innerHeight*.44
+    const parts = Array.from({length:160},(_,i)=>{
+      const a=(Math.PI*2*i)/160+(Math.random()-.5)*.6, sp=7+Math.random()*11
+      return { x:cx+(Math.random()-.5)*80, y:cy, vx:Math.cos(a)*sp*.85, vy:Math.sin(a)*sp-9,
+        color:pal[Math.floor(Math.random()*pal.length)], size:3+Math.random()*8,
+        rot:Math.random()*Math.PI*2, rotV:(Math.random()-.5)*.28, rect:Math.random()>.38,
+        life:1, decay:.005+Math.random()*.007 }
+    })
+    const draw = () => {
+      ctx.clearRect(0,0,canvas.width,canvas.height); let alive=false
+      for (const p of parts) {
+        p.vy+=.32; p.vx*=.992; p.x+=p.vx; p.y+=p.vy; p.rot+=p.rotV; p.life-=p.decay
+        if (p.life>0 && p.y<canvas.height+40) alive=true
+        ctx.save(); ctx.globalAlpha=Math.max(0,p.life); ctx.translate(p.x,p.y); ctx.rotate(p.rot); ctx.fillStyle=p.color
+        if (p.rect) ctx.fillRect(-p.size/2,-p.size*.3,p.size,p.size*.55)
+        else { ctx.beginPath(); ctx.ellipse(0,0,p.size*.45,p.size*.28,0,0,Math.PI*2); ctx.fill() }
+        ctx.restore()
+      }
+      if (alive) this._confRaf=requestAnimationFrame(draw)
+      else ctx.clearRect(0,0,canvas.width,canvas.height)
+    }
+    this._confRaf=requestAnimationFrame(draw)
+  }
+
+  // scratch event binding
+  _onSD=(e)=>{if(this.state.scratched)return;this._scrDrawing=true;const{x,y}=this._getXY(e);this._doScratch(x,y)}
+  _onSM=(e)=>{if(!this._scrDrawing||this.state.scratched)return;const{x,y}=this._getXY(e);this._doScratch(x,y)}
+  _onSE=()=>{this._scrDrawing=false}
+  _onSTS=(e)=>{e.preventDefault();if(this.state.scratched)return;this._scrDrawing=true;const t=e.touches[0];const{x,y}=this._getXY(t);this._doScratch(x,y)}
+  _onSTM=(e)=>{e.preventDefault();if(!this._scrDrawing||this.state.scratched)return;const t=e.touches[0];const{x,y}=this._getXY(t);this._doScratch(x,y)}
+
+  _bindScratch() {
+    const c=this._scrCanvas; if(!c) return
+    c.addEventListener('mousedown',this._onSD); c.addEventListener('mousemove',this._onSM)
+    c.addEventListener('mouseup',this._onSE); c.addEventListener('mouseleave',this._onSE)
+    c.addEventListener('touchstart',this._onSTS,{passive:false}); c.addEventListener('touchmove',this._onSTM,{passive:false}); c.addEventListener('touchend',this._onSE)
+  }
+  _unbindScratch() {
+    const c=this._scrCanvas; if(!c) return
+    c.removeEventListener('mousedown',this._onSD); c.removeEventListener('mousemove',this._onSM)
+    c.removeEventListener('mouseup',this._onSE); c.removeEventListener('mouseleave',this._onSE)
+    c.removeEventListener('touchstart',this._onSTS); c.removeEventListener('touchmove',this._onSTM); c.removeEventListener('touchend',this._onSE)
+  }
+
+  // ── renderVals ────────────────────────────────────
+  renderVals() {
+    const { entered, monoFormed, days, hours, minutes, seconds, countdownDone, scratched } = this.state
+    const pad = n => String(n).padStart(2,'0')
+
+    return {
+      // Monogram reveal overlay (opacity is owned entirely by monoLoop — kept out of this style object on purpose, or a re-render would stomp it)
+      curtainOverlayStyle: { position:'fixed', inset:0, zIndex:9999, display:'flex', alignItems:'center', justifyContent:'center', background:'#08070a', cursor:'pointer', pointerEvents: entered?'none':'all' },
+      overlayRef: (el) => { this._overlayEl = el; if (el) el.style.opacity = String(this._overlayAlpha) },
+      monoHint: monoFormed ? 'Tap to continue' : 'Assembling…',
+
+      // Content (opacity is owned entirely by monoLoop too, for the same reason)
+      contentStyle: { position:'relative', zIndex:2, minHeight:'100vh' },
+      contentRef: (el) => { this._contentEl = el; if (el) el.style.opacity = String(this._contentAlpha) },
+
+      // Countdown
+      days: String(days), hours: pad(hours), minutes: pad(minutes), seconds: pad(seconds),
+      countdownDone, showCountdown: !countdownDone,
+
+      // Scratch
+      scratched, showScratchHint: !scratched,
+
+      // Handlers
+      handleEnter: this.handleEnter,
+    }
+  }
+}
+</script>
+</body>
+</html>

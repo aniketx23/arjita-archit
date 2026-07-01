@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,400&family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet" />
+<style>
+  body{margin:0;background:#f0eee9;font-family:system-ui,sans-serif}
+  .dv-turn{padding:40px 44px 32px;border-bottom:1px solid rgba(0,0,0,.08)}
+  .dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 10px}
+  .dv-tid{font:600 10px ui-monospace,Menlo,monospace;padding:3px 7px;background:#1a1a1a;color:#fff;border-radius:4px;text-decoration:none}
+  .dv-tname{font:600 13px/1.2 system-ui,sans-serif;color:#1a1a1a}
+  .dv-opts{display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start}
+  .dv-opt{flex:none;display:flex;flex-direction:column;gap:9px;width:320px}
+  .dv-oid{font:600 10.5px ui-monospace,Menlo,monospace;padding:3px 7px;background:rgba(0,0,0,.08);color:#1a1a1a;border-radius:5px;text-decoration:none}
+  .dv-olabel{display:flex;align-items:baseline;gap:8px;font:400 11px/1.3 system-ui,sans-serif;color:rgba(0,0,0,.55)}
+  .dv-card{max-width:100%;background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.06);overflow:hidden}
+  .dv-opt:target .dv-oid{background:#2a78d6;color:#fff}
+  .dv-next{margin:22px 0 0;font:12px/1.5 system-ui,sans-serif;color:rgba(0,0,0,.5)}
+  @keyframes goldPulse { 0%,100%{opacity:.55} 50%{opacity:1} }
+  @keyframes flameFlicker { 0%,100%{transform:scaleY(1) scaleX(1)} 45%{transform:scaleY(1.08) scaleX(.95)} 60%{transform:scaleY(.94) scaleX(1.05)} }
+  @keyframes monoFlash { 0%{opacity:0;transform:scale(.3)} 14%{opacity:1;transform:scale(1)} 100%{opacity:0;transform:scale(15)} }
+</style>
+</helmet>
+
+<section class="dv-turn" id="t1">
+  <div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">Curtain-reveal alternatives — built from the invite's own palette</span></div>
+  <p style="margin:0 0 22px;font:400 13px/1.6 system-ui,sans-serif;color:rgba(0,0,0,.6);max-width:780px;">Four re-skins of the opening moment, using colors and type already in the invite — black ground, gold hairlines, the terracotta-to-gold serif gradient from the names — instead of the red theater-velvet, which doesn't relate to anything else on the page. Tap any stage to open it, tap again to replay.</p>
+  <div class="dv-opts">
+
+    <!-- ══ 1a — Wax-seal monogram ══ -->
+    <div class="dv-opt" id="1a">
+      <div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a>Wax-seal monogram — cracks open</div>
+      <div class="dv-card">
+        <div onClick="{{ toggle1a }}" role="button" tabIndex="0" aria-label="Preview: wax seal reveal" style="position:relative;width:320px;height:580px;background:#08070a;overflow:hidden;cursor:pointer;">
+
+          <div style="{{ hero1aStyle }}">
+            <p style="fontFamily:'Montserrat',sans-serif;fontSize:8px;fontWeight:500;letterSpacing:.22em;textTransform:uppercase;color:#9a8456;marginBottom:8px;opacity:.8;">Together with our families</p>
+            <h3 style="fontFamily:'Playfair Display',serif;fontSize:30px;fontWeight:700;lineHeight:1.15;margin:0;background:linear-gradient(135deg,#6b2c2c 0%,#d4816e 50%,#d4af37 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;backgroundClip:text;">Arjita &amp; Archit</h3>
+            <p style="fontFamily:'Cormorant Garamond',Georgia,serif;fontStyle:italic;fontSize:12px;color:#9a8456;marginTop:10px;">a cocktail celebration</p>
+          </div>
+
+          <div style="{{ frame1aStyle }}">
+            <div style="position:absolute;inset:0;borderRadius:50%;background:#150c0c;border:1px solid rgba(212,175,55,.55);display:flex;alignItems:center;justifyContent:center;overflow:hidden;animation:goldPulse 3s ease-in-out infinite;boxShadow:0 18px 40px rgba(0,0,0,.5);">
+              <span style="fontFamily:'Playfair Display',serif;fontWeight:700;fontSize:88px;position:absolute;transform:translateX(-16px);background:linear-gradient(135deg,#6b2c2c,#d4816e,#d4af37);-webkit-background-clip:text;-webkit-text-fill-color:transparent;backgroundClip:text;">A</span>
+              <span style="fontFamily:'Playfair Display',serif;fontWeight:700;fontSize:88px;position:absolute;transform:translateX(16px) scaleX(-1);opacity:.65;background:linear-gradient(135deg,#6b2c2c,#d4816e,#d4af37);-webkit-background-clip:text;-webkit-text-fill-color:transparent;backgroundClip:text;">A</span>
+            </div>
+            <div style="{{ seal1aLeftStyle }}">
+              <div style="width:190px;height:190px;borderRadius:50%;background:linear-gradient(135deg,#8b2020 0%,#d4af37 100%);boxShadow:inset 0 0 30px rgba(0,0,0,.35);"></div>
+            </div>
+            <div style="{{ seal1aRightStyle }}">
+              <div style="width:190px;height:190px;borderRadius:50%;background:linear-gradient(135deg,#8b2020 0%,#d4af37 100%);boxShadow:inset 0 0 30px rgba(0,0,0,.35);transform:translateX(-50%);"></div>
+            </div>
+          </div>
+
+          <p style="position:absolute;bottom:22px;left:0;right:0;textAlign:center;fontFamily:'Montserrat',sans-serif;fontSize:9px;fontWeight:500;letterSpacing:.18em;textTransform:uppercase;color:rgba(212,175,55,.55);pointerEvents:none;">{{ hint1a }}</p>
+        </div>
+      </div>
+      <p style="margin:0;font:400 12px/1.55 system-ui,sans-serif;color:rgba(0,0,0,.62);">A circular wax-seal crest holding two interlocked A's — literally the "mix both A's" idea. Tap and the seal cracks in half like real wax, then dissolves to reveal the names.</p>
+    </div>
+
+    <!-- ══ 1b — Sparkle-built monogram ══ -->
+    <div class="dv-opt" id="1b">
+      <div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a>Sparkle-built monogram — assembles &amp; scatters</div>
+      <div class="dv-card">
+        <div onClick="{{ toggleMono }}" role="button" tabIndex="0" aria-label="Preview: particle monogram reveal" style="position:relative;width:320px;height:580px;background:#08070a;overflow:hidden;cursor:pointer;">
+          <canvas id="mono-canvas" style="position:absolute;inset:0;width:320px;height:580px;display:block;"></canvas>
+
+          <div style="{{ flash1bStyle }}"></div>
+
+          <div style="{{ hero1bStyle }}" ref="{{ heroRef1b }}">
+            <p style="fontFamily:'Montserrat',sans-serif;fontSize:8px;fontWeight:500;letterSpacing:.22em;textTransform:uppercase;color:#9a8456;marginBottom:8px;opacity:.8;">Together with our families</p>
+            <h3 style="fontFamily:'Playfair Display',serif;fontSize:30px;fontWeight:700;lineHeight:1.15;margin:0;background:linear-gradient(135deg,#6b2c2c 0%,#d4816e 50%,#d4af37 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;backgroundClip:text;">Arjita &amp; Archit</h3>
+            <p style="fontFamily:'Cormorant Garamond',Georgia,serif;fontStyle:italic;fontSize:12px;color:#9a8456;marginTop:10px;">a cocktail celebration</p>
+          </div>
+          <p style="position:absolute;bottom:22px;left:0;right:0;textAlign:center;fontFamily:'Montserrat',sans-serif;fontSize:9px;fontWeight:500;letterSpacing:.18em;textTransform:uppercase;color:rgba(212,175,55,.55);pointerEvents:none;">{{ hint1b }}</p>
+        </div>
+      </div>
+      <p style="margin:0;font:400 12px/1.55 system-ui,sans-serif;color:rgba(0,0,0,.62);">Now built from your actual monogram artwork — particles sample the uploaded AA crest (ring, laurel sprig, dissolving sparkle trail and all), converge into it crisp, then blow outward in a quick burst to reveal the names.</p>
+    </div>
+
+    <!-- ══ 1c — Gold jaali gates ══ -->
+    <div class="dv-opt" id="1c">
+      <div class="dv-olabel"><a class="dv-oid" href="#1c">1c</a>Gold jaali gates — slide open</div>
+      <div class="dv-card">
+        <div onClick="{{ toggle1c }}" role="button" tabIndex="0" aria-label="Preview: jaali gate reveal" style="position:relative;width:320px;height:580px;background:#08070a;overflow:hidden;cursor:pointer;">
+
+          <div style="{{ hero1cStyle }}">
+            <p style="fontFamily:'Montserrat',sans-serif;fontSize:8px;fontWeight:500;letterSpacing:.22em;textTransform:uppercase;color:#9a8456;marginBottom:8px;opacity:.8;">Together with our families</p>
+            <h3 style="fontFamily:'Playfair Display',serif;fontSize:30px;fontWeight:700;lineHeight:1.15;margin:0;background:linear-gradient(135deg,#6b2c2c 0%,#d4816e 50%,#d4af37 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;backgroundClip:text;">Arjita &amp; Archit</h3>
+            <p style="fontFamily:'Cormorant Garamond',Georgia,serif;fontStyle:italic;fontSize:12px;color:#9a8456;marginTop:10px;">a cocktail celebration</p>
+          </div>
+
+          <div style="{{ door1cLeftStyle }}"></div>
+          <div style="{{ door1cRightStyle }}"></div>
+          <div style="{{ seam1cStyle }}"></div>
+          <div style="position:absolute;top:0;left:50%;transform:translate(-50%,-1px) rotate(45deg);width:10px;height:10px;background:linear-gradient(135deg,#d4af37,#8b6a1f);zIndex:4;opacity:{{ finial1cOpacity }};transition:opacity .4s ease;"></div>
+
+          <p style="position:absolute;bottom:22px;left:0;right:0;textAlign:center;fontFamily:'Montserrat',sans-serif;fontSize:9px;fontWeight:500;letterSpacing:.18em;textTransform:uppercase;color:rgba(212,175,55,.55);pointerEvents:none;zIndex:5;">{{ hint1c }}</p>
+        </div>
+      </div>
+      <p style="margin:0;font:400 12px/1.55 system-ui,sans-serif;color:rgba(0,0,0,.62);">Two gold jaali lattice gates — the trellis pattern seen at mandaps — meet at a glowing seam. Same left/right split as today's curtain, just re-skinned, so it's the cheapest swap to make.</p>
+    </div>
+
+    <!-- ══ 1d — Diya glow bloom ══ -->
+    <div class="dv-opt" id="1d">
+      <div class="dv-olabel"><a class="dv-oid" href="#1d">1d</a>Diya glow — blooms into light</div>
+      <div class="dv-card">
+        <div onClick="{{ toggle1d }}" role="button" tabIndex="0" aria-label="Preview: diya glow reveal" style="position:relative;width:320px;height:580px;background:#08070a;overflow:hidden;cursor:pointer;">
+
+          <div style="{{ hero1dStyle }}">
+            <p style="fontFamily:'Montserrat',sans-serif;fontSize:8px;fontWeight:500;letterSpacing:.22em;textTransform:uppercase;color:#9a8456;marginBottom:8px;opacity:.8;">Together with our families</p>
+            <h3 style="fontFamily:'Playfair Display',serif;fontSize:30px;fontWeight:700;lineHeight:1.15;margin:0;background:linear-gradient(135deg,#6b2c2c 0%,#d4816e 50%,#d4af37 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;backgroundClip:text;">Arjita &amp; Archit</h3>
+            <p style="fontFamily:'Cormorant Garamond',Georgia,serif;fontStyle:italic;fontSize:12px;color:#9a8456;marginTop:10px;">a cocktail celebration</p>
+          </div>
+
+          <div style="{{ glow1dStyle }}"></div>
+          <div style="{{ flame1dWrapStyle }}">
+            <div style="width:14px;height:20px;margin:0 auto;borderRadius:0 50% 50% 50%;transform:rotate(45deg);background:linear-gradient(180deg,#fff3d0 0%,#ffd98a 35%,#d4af37 70%,#8b5a1f 100%);animation:flameFlicker 2.1s ease-in-out infinite;boxShadow:0 0 18px 4px rgba(212,175,55,.55);"></div>
+            <div style="width:46px;height:12px;margin:2px auto 0;borderRadius:50%;background:linear-gradient(180deg,#d4af37,#7a5217);"></div>
+          </div>
+
+          <p style="position:absolute;bottom:22px;left:0;right:0;textAlign:center;fontFamily:'Montserrat',sans-serif;fontSize:9px;fontWeight:500;letterSpacing:.18em;textTransform:uppercase;color:rgba(212,175,55,.55);pointerEvents:none;zIndex:5;">{{ hint1d }}</p>
+        </div>
+      </div>
+      <p style="margin:0;font:400 12px/1.55 system-ui,sans-serif;color:rgba(0,0,0,.62);">A single diya flame blooms into a wash of warm gold light that settles into the page's own ambient glow. The most minimal option — no doors, no monogram, just light.</p>
+    </div>
+
+  </div>
+  <p class="dv-next">Try next: "make <a class="dv-oid" href="#1b">1b</a> the real hero reveal" · "combine <a class="dv-oid" href="#1a">1a</a>'s seal with <a class="dv-oid" href="#1c">1c</a>'s slide-open motion" · "show me more directions"</p>
+</section>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { o1a: false, o1b: false, o1c: false, o1d: false, monoFormed: false }
+
+  _monoRaf = null
+  _monoCtx = null
+  _monoW = 320
+  _monoH = 580
+  _monoParticles = null
+  _monoFormedTimer = null
+  _monoImg = null
+  _monoBox = 222
+  _monoCrispAlpha = 0
+  _hero1bEl = null
+  _hero1bAlpha = 0
+  _heroRevealAt = 0
+
+  componentDidMount() {
+    const canvas = document.getElementById('mono-canvas')
+    if (!canvas) return
+    const dpr = Math.min(window.devicePixelRatio || 1, 2)
+    canvas.width = this._monoW * dpr
+    canvas.height = this._monoH * dpr
+    canvas.style.width = this._monoW + 'px'
+    canvas.style.height = this._monoH + 'px'
+    const ctx = canvas.getContext('2d')
+    ctx.scale(dpr, dpr)
+    this._monoCtx = ctx
+    this._loadMonogramArt()
+    this._monoRaf = requestAnimationFrame(this.monoLoop)
+  }
+
+  _loadMonogramArt() {
+    const img = new Image()
+    img.onload = () => { this._monoImg = img; this._seedMonogram() }
+    img.onerror = () => { this._monoImg = null; this._seedMonogram() }
+    img.src = './uploads/f3f35027-bbb5-49ba-98a2-02ba2d5fb631.png'
+  }
+
+  componentWillUnmount() {
+    if (this._monoRaf) cancelAnimationFrame(this._monoRaf)
+    clearTimeout(this._monoFormedTimer)
+  }
+
+  // ── build target points by sampling the couple's actual monogram artwork ──
+  _buildMonogramTargets(w, h) {
+    const off = document.createElement('canvas')
+    off.width = w; off.height = h
+    const octx = off.getContext('2d')
+    octx.clearRect(0, 0, w, h)
+    const cx = w / 2, cy = 255, box = this._monoBox
+
+    if (this._monoImg) {
+      octx.drawImage(this._monoImg, cx - box / 2, cy - box / 2, box, box)
+    } else {
+      // fallback while the artwork loads — simple ring + interlocked A's
+      octx.fillStyle = '#fff'; octx.strokeStyle = '#fff'
+      const R = box * 0.42
+      octx.lineWidth = 2.4
+      octx.beginPath(); octx.arc(cx, cy, R, 0, Math.PI * 2); octx.stroke()
+      octx.textAlign = 'center'; octx.textBaseline = 'middle'
+      octx.font = "700 " + Math.round(box * 0.34) + "px 'Playfair Display', Georgia, serif"
+      octx.save(); octx.translate(cx - box * 0.04, cy + box * 0.02); octx.fillText('A', 0, 0); octx.restore()
+      octx.save(); octx.translate(cx + box * 0.04, cy + box * 0.02); octx.scale(-1, 1); octx.fillText('A', 0, 0); octx.restore()
+    }
+
+    const data = octx.getImageData(0, 0, w, h).data
+    const pts = []
+    const step = 2
+    for (let y = 0; y < h; y += step) {
+      for (let x = 0; x < w; x += step) {
+        if (data[(y * w + x) * 4 + 3] > 100) pts.push({ x, y })
+      }
+    }
+    for (let i = pts.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1))
+      const tmp = pts[i]; pts[i] = pts[j]; pts[j] = tmp
+    }
+    return pts.slice(0, 700)
+  }
+
+  _seedMonogram() {
+    const w = this._monoW, h = this._monoH
+    const targets = this._buildMonogramTargets(w, h)
+    const now = performance.now()
+    this._monoParticles = targets.map((pt) => ({
+      assembleX: pt.x, assembleY: pt.y,
+      sx: Math.random() * w, sy: Math.random() * h, sa: 0,
+      tx: pt.x, ty: pt.y, ta: 1,
+      segStart: now, wob: Math.random() * Math.PI * 2, size: 1.1 + Math.random() * 1.5,
+      dur: 900 + Math.random() * 200, burst: false,
+    }))
+    this._scheduleFormed(1050)
+  }
+
+  _scheduleFormed(delay) {
+    clearTimeout(this._monoFormedTimer)
+    this._monoFormedTimer = setTimeout(() => this.setState({ monoFormed: true }), delay)
+  }
+
+  _easeOutCubic(t) { return 1 - Math.pow(1 - t, 3) }
+  _easeOutExpo(t) { return t >= 1 ? 1 : 1 - Math.pow(2, -10 * t) }
+
+  _particleNow(p, now) {
+    const dur = p.dur || 900
+    const t = Math.max(0, Math.min(1, (now - p.segStart) / dur))
+    const e = p.burst ? this._easeOutExpo(t) : this._easeOutCubic(t)
+    return { x: p.sx + (p.tx - p.sx) * e, y: p.sy + (p.ty - p.sy) * e, a: p.sa + (p.ta - p.sa) * e, t }
+  }
+
+  monoLoop = () => {
+    const now = performance.now()
+    if (typeof this._hero1bAlpha !== 'number' || isNaN(this._hero1bAlpha)) this._hero1bAlpha = 0
+    const targetHero = this.state.o1b ? 1 : 0
+    if (now >= (this._heroRevealAt || 0)) {
+      const heroEase = targetHero ? 0.035 : 0.07
+      this._hero1bAlpha += (targetHero - this._hero1bAlpha) * heroEase
+      if (Math.abs(targetHero - this._hero1bAlpha) < 0.004) this._hero1bAlpha = targetHero
+    }
+    if (this._hero1bEl) this._hero1bEl.style.opacity = String(this._hero1bAlpha)
+
+    const ctx = this._monoCtx
+    if (ctx && this._monoParticles) {
+      const formed = this.state.monoFormed
+      if (typeof this._monoCrispAlpha !== 'number' || isNaN(this._monoCrispAlpha)) this._monoCrispAlpha = 0
+      const targetCrisp = formed ? 1 : 0
+      this._monoCrispAlpha += (targetCrisp - this._monoCrispAlpha) * 0.05
+      if (Math.abs(targetCrisp - this._monoCrispAlpha) < 0.004) this._monoCrispAlpha = targetCrisp
+      ctx.clearRect(0, 0, this._monoW, this._monoH)
+      for (const p of this._monoParticles) {
+        const r = this._particleNow(p, now)
+        let dx = r.x, dy = r.y
+        if (r.t >= 1 && !p.burst) {
+          const wob = now * 0.0016 + p.wob
+          dx += Math.sin(wob) * 2.2
+          dy += Math.cos(wob * 0.8) * 2.2
+        }
+        const dim = (formed && !p.burst && r.t >= 1) ? 0.4 : 1
+        const sizeMul = (p.burst && r.t < 1) ? 1.5 : 1
+        if (r.a > 0.01) {
+          ctx.save()
+          ctx.globalAlpha = Math.max(0, Math.min(1, r.a)) * dim
+          ctx.fillStyle = '#e8c97a'
+          ctx.beginPath()
+          ctx.arc(dx, dy, p.size * sizeMul, 0, Math.PI * 2)
+          ctx.fill()
+          ctx.restore()
+        }
+      }
+      if (this._monoCrispAlpha > 0.01 && this._monoImg) {
+        const cx = this._monoW / 2, cy = 255, box = this._monoBox
+        ctx.save()
+        ctx.globalAlpha = this._monoCrispAlpha
+        ctx.drawImage(this._monoImg, cx - box / 2, cy - box / 2, box, box)
+        ctx.restore()
+      }
+    }
+    this._monoRaf = requestAnimationFrame(this.monoLoop)
+  }
+
+  toggleMono = () => {
+    const opening = !this.state.o1b
+    clearTimeout(this._monoFormedTimer)
+    const now = performance.now()
+    this._heroRevealAt = opening ? now + 550 : 0
+    const parts = this._monoParticles || []
+    parts.forEach((p) => {
+      const cur = this._particleNow(p, now)
+      p.sx = cur.x; p.sy = cur.y; p.sa = cur.a
+      if (opening) {
+        const ang = Math.random() * Math.PI * 2
+        const rad = 340 + Math.random() * 340
+        p.tx = this._monoW / 2 + Math.cos(ang) * rad
+        p.ty = 255 + Math.sin(ang) * rad
+        p.ta = 0
+        p.dur = 1150 + Math.random() * 300
+        p.burst = true
+      } else {
+        p.tx = p.assembleX; p.ty = p.assembleY; p.ta = 1
+        p.dur = 900 + Math.random() * 200
+        p.burst = false
+      }
+      p.segStart = now
+    })
+    this.setState({ o1b: opening, monoFormed: false })
+    if (!opening) this._scheduleFormed(1050)
+  }
+
+  toggle1a = () => this.setState((s) => ({ o1a: !s.o1a }))
+  toggle1c = () => this.setState((s) => ({ o1c: !s.o1c }))
+  toggle1d = () => this.setState((s) => ({ o1d: !s.o1d }))
+
+  renderVals() {
+    const { o1a, o1b, o1c, o1d, monoFormed } = this.state
+    const heroBase = { position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '20px', pointerEvents: 'none' }
+    const jaali = 'repeating-linear-gradient(45deg, rgba(212,175,55,.32) 0px, rgba(212,175,55,.32) 2px, transparent 2px, transparent 22px), repeating-linear-gradient(-45deg, rgba(212,175,55,.32) 0px, rgba(212,175,55,.32) 2px, transparent 2px, transparent 22px), linear-gradient(180deg,#1c1310,#0d0906)'
+
+    return {
+      // 1a — wax seal
+      hero1aStyle: { ...heroBase, opacity: o1a ? 1 : 0, transition: 'opacity .7s ease .55s' },
+      frame1aStyle: { position: 'absolute', top: '44%', left: '50%', transform: 'translate(-50%,-50%) scale(' + (o1a ? 0.85 : 1) + ')', opacity: o1a ? 0 : 1, transition: 'opacity .6s ease .55s, transform .6s ease .55s', width: '190px', height: '190px' },
+      seal1aLeftStyle: { position: 'absolute', left: 0, top: 0, width: '50%', height: '100%', overflow: 'hidden', transform: o1a ? 'translateX(-150px)' : 'translateX(0)', transition: 'transform .8s cubic-bezier(.76,0,.24,1)' },
+      seal1aRightStyle: { position: 'absolute', right: 0, top: 0, width: '50%', height: '100%', overflow: 'hidden', transform: o1a ? 'translateX(150px)' : 'translateX(0)', transition: 'transform .8s cubic-bezier(.76,0,.24,1)' },
+      hint1a: o1a ? 'tap to replay' : 'tap to open the seal',
+
+      // 1b — sparkle monogram
+      hero1bStyle: { ...heroBase, opacity: 0 },
+      heroRef1b: (el) => { this._hero1bEl = el },
+      flash1bStyle: { position: 'absolute', left: '50%', top: '255px', width: '40px', height: '40px', marginLeft: '-20px', marginTop: '-20px', borderRadius: '50%', zIndex: 2, background: 'radial-gradient(circle,#fff7e0 0%,#ffd98a 32%,rgba(212,175,55,0) 74%)', opacity: 0, pointerEvents: 'none', animation: o1b ? 'monoFlash .6s cubic-bezier(.16,1,.3,1) 1' : 'none' },
+      hint1b: !o1b ? (monoFormed ? 'tap to reveal' : 'assembling…') : 'tap to reform the monogram',
+
+      // 1c — jaali gates
+      hero1cStyle: { ...heroBase, zIndex: 1 },
+      door1cLeftStyle: { position: 'absolute', left: 0, top: 0, width: '50%', height: '100%', zIndex: 2, background: jaali, borderRight: '2px solid rgba(212,175,55,.55)', transform: o1c ? 'translateX(-100%)' : 'translateX(0)', transition: 'transform 1s cubic-bezier(.76,0,.24,1)' },
+      door1cRightStyle: { position: 'absolute', right: 0, top: 0, width: '50%', height: '100%', zIndex: 2, background: jaali, borderLeft: '2px solid rgba(212,175,55,.55)', transform: o1c ? 'translateX(100%)' : 'translateX(0)', transition: 'transform 1s cubic-bezier(.76,0,.24,1)' },
+      seam1cStyle: { position: 'absolute', top: 0, bottom: 0, left: '50%', width: '3px', transform: 'translateX(-50%)', zIndex: 3, background: 'linear-gradient(to bottom,transparent,#d4af37,transparent)', opacity: o1c ? 0 : 1, transition: 'opacity .3s ease', boxShadow: '0 0 18px rgba(212,175,55,.6)' },
+      finial1cOpacity: o1c ? 0 : 1,
+      hint1c: o1c ? 'tap to close the gates' : 'tap to open the gates',
+
+      // 1d — diya glow
+      hero1dStyle: { ...heroBase, opacity: o1d ? 1 : 0, transition: 'opacity .9s ease .5s' },
+      glow1dStyle: { position: 'absolute', left: '50%', top: '60%', width: '40px', height: '40px', borderRadius: '50%', transform: 'translate(-50%,-50%) scale(' + (o1d ? 42 : 1) + ')', transition: 'transform 1.4s cubic-bezier(.22,.9,.32,1)', background: 'radial-gradient(circle,#ffd98a 0%,#d4af37 22%,#7a4a17 48%,rgba(8,7,10,0) 72%)' },
+      flame1dWrapStyle: { position: 'absolute', left: '50%', top: '60%', transform: 'translate(-50%,-50%)', opacity: o1d ? 0 : 1, transition: 'opacity .4s ease' },
+      hint1d: o1d ? 'tap to dim' : 'tap to light the diya',
+
+      // handlers
+      toggle1a: this.toggle1a,
+      toggleMono: this.toggleMono,
+      toggle1c: this.toggle1c,
+      toggle1d: this.toggle1d,
+    }
+  }
+}
+
+</script>
+</body>
+</html>

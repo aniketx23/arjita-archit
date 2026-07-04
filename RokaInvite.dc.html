@@ -6,7 +6,9 @@
 <script src="./support.js"></script>
 <meta property="og:title" content="Arjita & Archit — Roka Celebration 💫" />
 <meta property="og:description" content="Join us on 18 July 2026, Saturday · 8 PM onwards at Saratoga, Noida. With love, Arjita & Archit 🥂" />
-<meta property="og:image" content="https://arjita-archit.vercel.app/uploads/f3f35027-bbb5-49ba-98a2-02ba2d5fb631.png" />
+<meta property="og:image" content="https://arjita-archit.vercel.app/uploads/og-preview.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
 <meta property="og:url" content="https://arjita-archit.vercel.app/" />
 <meta property="og:type" content="website" />
 </head>
@@ -409,7 +411,15 @@ class Component extends DCLogic {
     this._initMonoCanvas()
     this._loadMonogramArt()
     window.addEventListener('resize', this._onResize)
+    document.addEventListener('visibilitychange', this._onVisibilityChange)
     document.body.style.overflow = 'hidden'
+  }
+
+  // ── auto-mute while the tab/app is backgrounded — restores the user's actual
+  // mute preference (not necessarily unmuted) once it's visible again ──
+  _onVisibilityChange = () => {
+    if (!this._audio) return
+    this._audio.muted = document.hidden ? true : this.state.muted
   }
 
   componentWillUnmount() {
@@ -422,6 +432,8 @@ class Component extends DCLogic {
     clearTimeout(this._resizeTimer)
     window.removeEventListener('resize', this._onResize)
     if (this._photoScrollFn) window.removeEventListener('scroll', this._photoScrollFn)
+    if (this._photoRaf) cancelAnimationFrame(this._photoRaf)
+    document.removeEventListener('visibilitychange', this._onVisibilityChange)
     if (this._audio) { this._audio.pause(); this._audio.src = ''; this._audio = null }
     document.body.style.overflow = ''
   }
@@ -981,7 +993,16 @@ class Component extends DCLogic {
     const wrap = document.getElementById('photo-collage-wrap')
     if (!wrap) { setTimeout(() => this._initPhotoScroll(), 150); return }
     this._photoWrap = wrap
-    this._photoScrollFn = () => this._onPhotoScroll()
+    // cache frame elements once — a querySelector per frame per scroll tick was extra
+    // unnecessary work on top of the layout thrash below
+    this._tunnelFrames = Array.from({ length: 6 }, (_, i) => document.querySelector('.tunnel-frame[data-frame="' + i + '"]'))
+    // rAF-coalesce: a 'scroll' event can fire far faster than the display can paint,
+    // especially during mobile momentum scrolling — without this, the handler below
+    // can fall behind and appear to freeze mid-gesture
+    this._photoScrollFn = () => {
+      if (this._photoRaf) return
+      this._photoRaf = requestAnimationFrame(() => { this._photoRaf = null; this._onPhotoScroll() })
+    }
     window.addEventListener('scroll', this._photoScrollFn, { passive: true })
     this._onPhotoScroll()
   }
@@ -1000,11 +1021,14 @@ class Component extends DCLogic {
     const N = 6
     const camZ = p * (N + 0.4) - 0.55
     for (let i = 0; i < N; i++) {
-      const fr = document.querySelector('.tunnel-frame[data-frame="' + i + '"]')
+      const fr = this._tunnelFrames && this._tunnelFrames[i]
       if (!fr) continue
       const rel = i - camZ                       // <0 behind camera, >0 ahead in depth
       const vis = rel > -0.85 && rel < 4.4
-      fr.style.display = vis ? 'block' : 'none'
+      // visibility, not display — toggling display:none/block forces a layout reflow on
+      // every scroll tick, which is what was freezing scrolling mid-gesture on mobile Safari
+      fr.style.visibility = vis ? 'visible' : 'hidden'
+      fr.style.pointerEvents = vis ? '' : 'none'
       if (!vis) continue
       let s = 1.5 / (1 + Math.max(0, rel) * 0.72)
       if (rel < 0) s *= 1 + (-rel) * 1.7          // swells past you as it exits

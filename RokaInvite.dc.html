@@ -68,11 +68,19 @@
     .fu--sec .fh--b { background: linear-gradient(180deg,#0d0a12 0%,#181321 100%); }
     .fu--sec .num { text-shadow: 0 0 12px rgba(240,208,96,.4); }
 
-    /* ── Photo memory tunnel ── */
-    @media (prefers-reduced-motion:reduce) {
-      .tunnel-frame { opacity:1 !important; }
-      .tunnel-frame[data-frame="5"] { transform:translate(-50%,-50%) !important; }
-      .tunnel-frame:not([data-frame="5"]) { display:none !important; }
+    /* ── Photo memory scrapbook — trigger-once reveal + idle float ── */
+    /* per-frame tilt/offset ride in inline --tilt/--dx so they don't fight the class transform */
+    .tunnel-frame { opacity: 0;
+      transform: translate(var(--dx,0px), 40px) scale(.96) rotate(var(--tilt,0deg));
+      transition: opacity .85s ease, transform .85s cubic-bezier(.2,.8,.2,1); }
+    .tunnel-frame.visible { opacity: 1;
+      transform: translate(var(--dx,0px), 0) scale(1) rotate(var(--tilt,0deg)); }
+    .frame-float { position: relative; width: 100%; height: 100%;
+      animation: frameFloat 6s ease-in-out infinite; }
+    @keyframes frameFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-7px)} }
+    @media (prefers-reduced-motion: reduce) {
+      .tunnel-frame { opacity:1; transform:none; transition:none; }
+      .frame-float { animation:none; }
     }
 
     /* ── Mobile — most guests open this on a phone ── */
@@ -236,45 +244,54 @@
     </article>
   </section>
 
-  <!-- ── PHOTO MEMORY TUNNEL — scroll-driven fly-through ────── -->
-  <div id="photo-collage-wrap" style="height:440vh;position:relative;background:rgba(4,3,9,0.50);">
-    <section data-screen-label="Photo Collage" style="position:sticky;top:0;height:100vh;display:flex;flexDirection:column;alignItems:center;justifyContent:center;overflow:hidden;background:radial-gradient(circle at 50% 45%,rgba(212,175,55,.06) 0%,transparent 65%),rgba(4,3,9,0.50);">
+  <!-- ── PHOTO MEMORY SCRAPBOOK — trigger-once reveal ────── -->
+  <div id="photo-collage-wrap" style="position:relative;background:rgba(4,3,9,0.50);">
+    <section data-screen-label="Photo Collage" style="display:flex;flexDirection:column;alignItems:center;padding:6rem 1.25rem 7rem;background:radial-gradient(circle at 50% 45%,rgba(212,175,55,.06) 0%,transparent 65%),rgba(4,3,9,0.50);">
 
       <x-import component-from-global-scope="image-slot" from="./image-slot.js" hint-size="1px,1px"></x-import>
 
       <!-- eyebrow -->
-      <div style="position:absolute;top:clamp(4rem,10vh,7rem);left:0;right:0;display:flex;alignItems:center;justifyContent:center;gap:1.2rem;zIndex:60;">
+      <div style="display:flex;alignItems:center;justifyContent:center;gap:1.2rem;marginBottom:3.5rem;">
         <div style="width:40px;height:1px;background:linear-gradient(to right,transparent,rgba(212,175,55,.5));"></div>
         <p style="fontFamily:'Montserrat',sans-serif;fontSize:.68rem;fontWeight:500;letterSpacing:.26em;textTransform:uppercase;color:rgba(212,175,55,.75);">Their story in frames</p>
         <div style="width:40px;height:1px;background:linear-gradient(to left,transparent,rgba(212,175,55,.5));"></div>
       </div>
 
-      <!-- tunnel stage — frames fly toward you as you scroll -->
-      <div id="photo-tunnel" style="position:relative;width:100%;height:100%;">
+      <!-- scrapbook stage — each frame reveals as it scrolls into view, then idle-floats -->
+      <div id="photo-tunnel" style="display:flex;flexDirection:column;alignItems:center;gap:3.2rem;">
 
-        <div class="tunnel-frame" data-frame="0" style="position:absolute;left:50%;top:47%;width:min(74vw,300px);height:min(58vh,452px);background:#100d14;border:1px solid rgba(212,175,55,.5);padding:9px;boxShadow:0 30px 80px rgba(0,0,0,.7);willChange:transform,opacity;transformOrigin:center;">
-          <image-slot id="photo-1" placeholder="Photo 1" shape="rect" style="width:100%;height:100%;display:block;"></image-slot>
+        <div class="tunnel-frame" data-frame="0" style="--tilt:-4deg;--dx:-14px;width:min(74vw,300px);height:min(58vh,452px);background:#100d14;border:1px solid rgba(212,175,55,.5);padding:9px;boxShadow:0 30px 80px rgba(0,0,0,.7);">
+          <div class="frame-float" style="animationDuration:6.2s;animationDelay:0s;">
+            <image-slot id="photo-1" placeholder="Photo 1" shape="rect" style="width:100%;height:100%;display:block;"></image-slot>
+          </div>
         </div>
-        <div class="tunnel-frame" data-frame="1" style="position:absolute;left:50%;top:47%;width:min(74vw,300px);height:min(58vh,452px);background:#100d14;border:1px solid rgba(212,175,55,.5);padding:9px;boxShadow:0 30px 80px rgba(0,0,0,.7);willChange:transform,opacity;transformOrigin:center;">
-          <image-slot id="photo-2" placeholder="Photo 2" shape="rect" style="width:100%;height:100%;display:block;"></image-slot>
+        <div class="tunnel-frame" data-frame="1" style="--tilt:3deg;--dx:14px;width:min(74vw,300px);height:min(58vh,452px);background:#100d14;border:1px solid rgba(212,175,55,.5);padding:9px;boxShadow:0 30px 80px rgba(0,0,0,.7);">
+          <div class="frame-float" style="animationDuration:5.6s;animationDelay:.5s;">
+            <image-slot id="photo-2" placeholder="Photo 2" shape="rect" style="width:100%;height:100%;display:block;"></image-slot>
+          </div>
         </div>
-        <div class="tunnel-frame" data-frame="2" style="position:absolute;left:50%;top:47%;width:min(74vw,300px);height:min(58vh,452px);background:#100d14;border:1px solid rgba(212,175,55,.5);padding:9px;boxShadow:0 30px 80px rgba(0,0,0,.7);willChange:transform,opacity;transformOrigin:center;">
-          <image-slot id="photo-3" placeholder="Photo 3" shape="rect" style="width:100%;height:100%;display:block;"></image-slot>
+        <div class="tunnel-frame" data-frame="2" style="--tilt:-3deg;--dx:-14px;width:min(74vw,300px);height:min(58vh,452px);background:#100d14;border:1px solid rgba(212,175,55,.5);padding:9px;boxShadow:0 30px 80px rgba(0,0,0,.7);">
+          <div class="frame-float" style="animationDuration:6.8s;animationDelay:.2s;">
+            <image-slot id="photo-3" placeholder="Photo 3" shape="rect" style="width:100%;height:100%;display:block;"></image-slot>
+          </div>
         </div>
-        <div class="tunnel-frame" data-frame="3" style="position:absolute;left:50%;top:47%;width:min(74vw,300px);height:min(58vh,452px);background:#100d14;border:1px solid rgba(212,175,55,.5);padding:9px;boxShadow:0 30px 80px rgba(0,0,0,.7);willChange:transform,opacity;transformOrigin:center;">
-          <image-slot id="photo-4" placeholder="Photo 4" shape="rect" style="width:100%;height:100%;display:block;"></image-slot>
+        <div class="tunnel-frame" data-frame="3" style="--tilt:4deg;--dx:14px;width:min(74vw,300px);height:min(58vh,452px);background:#100d14;border:1px solid rgba(212,175,55,.5);padding:9px;boxShadow:0 30px 80px rgba(0,0,0,.7);">
+          <div class="frame-float" style="animationDuration:5.9s;animationDelay:.8s;">
+            <image-slot id="photo-4" placeholder="Photo 4" shape="rect" style="width:100%;height:100%;display:block;"></image-slot>
+          </div>
         </div>
-        <div class="tunnel-frame" data-frame="4" style="position:absolute;left:50%;top:47%;width:min(74vw,300px);height:min(58vh,452px);background:#100d14;border:1px solid rgba(212,175,55,.5);padding:9px;boxShadow:0 30px 80px rgba(0,0,0,.7);willChange:transform,opacity;transformOrigin:center;">
-          <image-slot id="photo-5" placeholder="Photo 5" shape="rect" style="width:100%;height:100%;display:block;"></image-slot>
+        <div class="tunnel-frame" data-frame="4" style="--tilt:-2deg;--dx:-14px;width:min(74vw,300px);height:min(58vh,452px);background:#100d14;border:1px solid rgba(212,175,55,.5);padding:9px;boxShadow:0 30px 80px rgba(0,0,0,.7);">
+          <div class="frame-float" style="animationDuration:6.5s;animationDelay:.35s;">
+            <image-slot id="photo-5" placeholder="Photo 5" shape="rect" style="width:100%;height:100%;display:block;"></image-slot>
+          </div>
         </div>
-        <div class="tunnel-frame" data-frame="5" style="position:absolute;left:50%;top:47%;width:min(76vw,312px);height:min(60vh,468px);background:#100d14;border:1px solid rgba(212,175,55,.6);padding:9px;boxShadow:0 30px 90px rgba(0,0,0,.75),0 0 50px rgba(212,175,55,.1);willChange:transform,opacity;transformOrigin:center;">
-          <image-slot id="photo-main" placeholder="Couple photo" shape="rect" style="width:100%;height:100%;display:block;"></image-slot>
-          <span style="position:absolute;bottom:-30px;left:0;right:0;textAlign:center;fontFamily:'Cormorant Garamond',Georgia,serif;fontSize:1rem;fontStyle:italic;color:#9a8456;">Arjita &amp; Archit</span>
+        <div class="tunnel-frame" data-frame="5" style="--tilt:0deg;--dx:0px;width:min(76vw,312px);height:min(60vh,468px);background:#100d14;border:1px solid rgba(212,175,55,.6);padding:9px;boxShadow:0 30px 90px rgba(0,0,0,.75),0 0 50px rgba(212,175,55,.1);">
+          <div class="frame-float" style="animationDuration:7s;animationDelay:.6s;">
+            <image-slot id="photo-main" placeholder="Couple photo" shape="rect" style="width:100%;height:100%;display:block;"></image-slot>
+            <span style="position:absolute;bottom:-30px;left:0;right:0;textAlign:center;fontFamily:'Cormorant Garamond',Georgia,serif;fontSize:1rem;fontStyle:italic;color:#9a8456;">Arjita &amp; Archit</span>
+          </div>
         </div>
       </div>
-
-      <!-- scroll hint -->
-      <p id="tunnel-hint" style="position:absolute;bottom:2.4rem;left:0;right:0;textAlign:center;fontFamily:'Montserrat',sans-serif;fontSize:.62rem;fontWeight:500;letterSpacing:.22em;textTransform:uppercase;color:rgba(212,175,55,.55);animation:tapHint 2.5s ease-in-out infinite;pointerEvents:none;transition:opacity .5s ease;zIndex:60;">scroll</p>
 
     </section>
   </div>
@@ -431,8 +448,6 @@ class Component extends DCLogic {
     clearTimeout(this._monoFormedTimer)
     clearTimeout(this._resizeTimer)
     window.removeEventListener('resize', this._onResize)
-    if (this._photoScrollFn) window.removeEventListener('scroll', this._photoScrollFn)
-    if (this._photoRaf) cancelAnimationFrame(this._photoRaf)
     document.removeEventListener('visibilitychange', this._onVisibilityChange)
     if (this._audio) { this._audio.pause(); this._audio.src = ''; this._audio = null }
     document.body.style.overflow = ''
@@ -458,7 +473,7 @@ class Component extends DCLogic {
       entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible') })
     }, { threshold: 0.22 })
     setTimeout(() => {
-      document.querySelectorAll('.section-panel, .countdown-card, .photo-stage').forEach(el => io.observe(el))
+      document.querySelectorAll('.section-panel, .countdown-card, .photo-stage, .tunnel-frame').forEach(el => io.observe(el))
     }, 200)
   }
 
@@ -988,92 +1003,10 @@ class Component extends DCLogic {
     if (clear/(d.length/4) >= 0.42) this._triggerReveal()
   }
 
-  // ── photo collage scroll ─────────────────────────
-  _initPhotoScroll() {
-    const wrap = document.getElementById('photo-collage-wrap')
-    if (!wrap) { setTimeout(() => this._initPhotoScroll(), 150); return }
-    this._photoWrap = wrap
-    // cache frame elements once — a querySelector per frame per scroll tick was extra
-    // unnecessary work on top of the layout thrash below
-    this._tunnelFrames = Array.from({ length: 6 }, (_, i) => document.querySelector('.tunnel-frame[data-frame="' + i + '"]'))
-    // reduced motion: the CSS @media(prefers-reduced-motion) block already lays the frames
-    // out statically, so skip the scroll listener + per-tick update loop entirely
-    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-    // per-frame cache of the last style values written, so redundant assignments are skipped
-    this._tunnelState = this._tunnelFrames.map(() => ({}))
-    // blur is no longer animated per tick — clear any filter once so none is left stale
-    this._tunnelFrames.forEach((fr) => { if (fr) fr.style.filter = '' })
-    // rAF-coalesce: a 'scroll' event can fire far faster than the display can paint,
-    // especially during mobile momentum scrolling — without this, the handler below
-    // can fall behind and appear to freeze mid-gesture
-    this._photoScrollFn = () => {
-      if (this._photoRaf) return
-      this._photoRaf = requestAnimationFrame(() => { this._photoRaf = null; this._onPhotoScroll() })
-    }
-    window.addEventListener('scroll', this._photoScrollFn, { passive: true })
-    this._onPhotoScroll()
-  }
-
-  _onPhotoScroll() {
-    const wrap = this._photoWrap
-    if (!wrap) return
-    const rect = wrap.getBoundingClientRect()
-    const scrollable = wrap.offsetHeight - window.innerHeight
-    const progress = Math.max(0, Math.min(1, -rect.top / scrollable))
-    // skip when scroll hasn't moved progress (e.g. clamped at 0/1 outside the section) —
-    // stops the update loop from re-running on every scroll tick beyond the section bounds
-    if (progress === this._lastProgress) return
-    this._lastProgress = progress
-    this._updatePhotoTunnel(progress)
-  }
-
-  // ── memory tunnel — scroll flies the camera through 6 frames in depth ──
-  _updatePhotoTunnel(p) {
-    const N = 6
-    const camZ = p * (N + 0.4) - 0.55
-    for (let i = 0; i < N; i++) {
-      const fr = this._tunnelFrames && this._tunnelFrames[i]
-      if (!fr) continue
-      const st = this._tunnelState[i]
-      const rel = i - camZ                       // <0 behind camera, >0 ahead in depth
-      const vis = rel > -0.85 && rel < 4.4
-      // visibility, not display — toggling display:none/block forces a layout reflow on
-      // every scroll tick, which was freezing scrolling mid-gesture on mobile Safari.
-      // only write each style when its value actually changed.
-      const visVal = vis ? 'visible' : 'hidden'
-      if (st.visibility !== visVal) { fr.style.visibility = visVal; st.visibility = visVal }
-      const peVal = vis ? '' : 'none'
-      if (st.pointerEvents !== peVal) { fr.style.pointerEvents = peVal; st.pointerEvents = peVal }
-      if (!vis) continue
-      let s = 1.5 / (1 + Math.max(0, rel) * 0.72)
-      if (rel < 0) s *= 1 + (-rel) * 1.7          // swells past you as it exits
-      let op
-      if (rel < 0) op = Math.max(0, 1 + rel / 0.8)
-      else if (rel > 3) op = Math.max(0, 1 - (rel - 3) / 1.3)
-      else op = 1
-      const side = (i % 2 === 0 ? -1 : 1)
-      const depth = Math.min(Math.max(rel, 0), 3)
-      const xo = side * (26 + 46 * depth) * Math.min(s, 1)
-      const yo = ((i % 3) - 1) * 14 * depth
-      const tf = 'translate(-50%,-50%) translate(' + xo + 'px,' + yo + 'px) scale(' + s + ')'
-      if (st.transform !== tf) { fr.style.transform = tf; st.transform = tf }
-      const opv = String(op)
-      if (st.opacity !== opv) { fr.style.opacity = opv; st.opacity = opv }
-      const z = Math.round(200 - rel * 20)      // only write z-index when its rounded value changes
-      if (st.zIndex !== z) { fr.style.zIndex = String(z); st.zIndex = z }
-    }
-    const hint = this._tunnelHint || (this._tunnelHint = document.getElementById('tunnel-hint'))
-    if (hint) {
-      const hv = p > 0.015 ? '0' : '1'
-      if (this._lastHintOp !== hv) { hint.style.opacity = hv; this._lastHintOp = hv }
-    }
-  }
-
   _triggerReveal() {
     if (this.state.scratched) return
     this.setState({ scratched: true })
     setTimeout(() => this._observeSections(), 150)
-    setTimeout(() => this._initPhotoScroll(), 250)
     setTimeout(() => this._applyFlips(this._computeRemaining()), 200)
     const c = this._scrCanvas
     if (c) { c.style.transition='opacity .9s ease'; c.style.opacity='0'; setTimeout(()=>{c.style.pointerEvents='none'},900) }

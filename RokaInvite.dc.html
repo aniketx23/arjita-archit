@@ -4,6 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script src="./support.js"></script>
+<meta property="og:title" content="Arjita & Archit — Roka Celebration 💫" />
+<meta property="og:description" content="Join us on 18 July 2026, Saturday · 8 PM onwards at Saratoga, Noida. With love, Arjita & Archit 🥂" />
+<meta property="og:image" content="https://arjita-archit.vercel.app/uploads/f3f35027-bbb5-49ba-98a2-02ba2d5fb631.png" />
+<meta property="og:url" content="https://arjita-archit.vercel.app/" />
+<meta property="og:type" content="website" />
 </head>
 <body>
 <x-dc>
@@ -508,7 +513,7 @@ class Component extends DCLogic {
     if (this.state.entered) return
     // ── background music — must start from this user gesture or autoplay is blocked ──
     if (!this._audio) {
-      this._audio = new Audio('./uploads/song1.mp3')
+      this._audio = new Audio('./uploads/song2.mp3')
       this._audio.loop = true
       this._audio.volume = 0.4
       this._audio.muted = this.state.muted

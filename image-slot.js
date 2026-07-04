@@ -75,7 +75,10 @@
 
   function load() {
     if (loadP) return loadP;
-    loadP = fetch(STATE_FILE)
+    // no-store: the sidecar has no Cache-Control header under a plain static
+    // server, so browsers apply heuristic caching and can serve a stale copy
+    // for several minutes right after an edit — force a real network fetch.
+    loadP = fetch(STATE_FILE, { cache: 'no-store' })
       .then((r) => (r.ok ? r.json() : null))
       .then((j) => {
         // Merge: sidecar loses to any in-memory change that raced ahead of

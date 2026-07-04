@@ -11,13 +11,17 @@ A single wedding/Roka invitation microsite for Arjita & Archit (celebration: 18 
 The runtime does `fetch()` calls against its own origin (to re-fetch its own source, and to read the `<image-slot>` sidecar file), so **it must be served over HTTP — opening the `.dc.html` file directly via `file://` will not work.**
 
 ```bash
-python3 -m http.server 8848
+python3 admin_server.py 8848
 # then open http://localhost:8848/RokaInvite.dc.html
 ```
+
+`admin_server.py` is a local-only convenience server (drop-in replacement for `python3 -m http.server`) — it serves the site exactly the same, plus a `/admin` upload panel for swapping photo-slot images and the background-music file without hand-editing `.image-slots.state.json`/the `Audio()` call. Not part of the deployed site. Photo uploads there are resized/oriented/encoded the same way as `image-slot.js`'s own drop handler (see below). Requires `Pillow` (`pip install Pillow`) — falling back to plain `python3 -m http.server` still works for just viewing the site, but `/admin` won't exist.
 
 React/ReactDOM are loaded from `unpkg.com` at runtime (see `REACT_URL`/`REACT_DOM_URL` in `support.js`), so the browser needs internet access even though nothing is bundled locally.
 
 There's no lint or test command — verify changes by loading the page in a browser and checking the console for `[dc-runtime]` errors/warnings.
+
+**Cache gotcha**: the sidecar `.image-slots.state.json` has no `Cache-Control` header under a plain static server, so browsers apply heuristic caching — a normal reload (even one that feels like a hard refresh) can serve a stale copy for several minutes right after editing it. `image-slot.js`'s fetch now uses `{ cache: 'no-store' }` to prevent this, but keep it in mind if you ever bypass that fetch (e.g. testing via curl) and the browser doesn't reflect a change you're sure landed on disk.
 
 ## Architecture
 

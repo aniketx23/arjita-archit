@@ -28,44 +28,50 @@
     .countdown-card { opacity: 0; transform: translateY(36px) scale(.94); transition: opacity .75s ease, transform .75s ease; }
     .countdown-card.visible { opacity: 1; transform: translateY(0) scale(1); }
 
-    /* ── Photo collage cards — scroll-driven ── */
-    .photo-card {
-      position: absolute;
-      background: #fdfbf7;
-      border-radius: 3px;
-      box-shadow: 0 20px 48px rgba(0,0,0,.55), 0 4px 14px rgba(0,0,0,.3);
-      padding: 10px 10px 28px;
-      opacity: 0;
-      will-change: transform, opacity;
+    /* ── Flip-clock countdown tiles ── */
+    @keyframes flipDown { from { transform: rotateX(0deg); }  to { transform: rotateX(-90deg); } }
+    @keyframes flipUp   { from { transform: rotateX(90deg); } to { transform: rotateX(0deg); } }
+    .fu {
+      position: relative; width: 84px; height: 96px; border-radius: .875rem;
+      font-family: 'Playfair Display', serif; font-size: 2.6rem; font-weight: 700; line-height: 1;
+      color: #e8c97a; perspective: 300px; box-shadow: 0 8px 22px rgba(0,0,0,.5);
     }
-    .photo-card .card-label {
-      position: absolute; bottom: 6px; left: 0; right: 0;
-      text-align: center; font-family: 'Montserrat', sans-serif;
-      font-size: 9px; letter-spacing: .1em; text-transform: uppercase;
-      color: #6b5a4d; opacity: .75;
+    .fu .fh {
+      position: absolute; left: 0; right: 0; height: 50%; overflow: hidden;
+      display: flex; justify-content: center; align-items: flex-start;
+      border-left: 1px solid rgba(212,175,55,.22); border-right: 1px solid rgba(212,175,55,.22);
+      backface-visibility: hidden;
     }
-    .photo-card--main { left: 50%; top: 50%; width: 240px; height: 310px; z-index: 5; }
-    .photo-card--1    { left: 8%;  top: 16%; width: 168px; height: 216px; }
-    .photo-card--2    { left: 31%; top: 5%;  width: 146px; height: 187px; }
-    .photo-card--3    { right: 5%; top: 9%;  width: 182px; height: 233px; }
-    .photo-card--4    { right: 11%; bottom: 6%; width: 166px; height: 211px; }
-    .photo-card--5    { left: 12%; bottom: 4%; width: 154px; height: 197px; }
+    .fu .fh--t { top: 0;    border-radius: .875rem .875rem 0 0; border-top: 1px solid rgba(212,175,55,.22);
+                 background: linear-gradient(180deg,#17131c 0%,#100c14 100%); }
+    .fu .fh--b { bottom: 0; border-radius: 0 0 .875rem .875rem; border-bottom: 1px solid rgba(212,175,55,.22);
+                 background: linear-gradient(180deg,#0b0810 0%,#141019 100%); }
+    .fu .num { height: 96px; width: 100%; display: flex; align-items: center; justify-content: center; }
+    .fu .fh--b .num { margin-top: -48px; }
+    .fu .flap { z-index: 2; }
+    .fu .flap-front { transform-origin: bottom center; }
+    .fu .flap-back  { transform-origin: top center; transform: rotateX(90deg); }
+    .fu .flap-front.anim { animation: flipDown .30s ease-in forwards; }
+    .fu .flap-back.anim  { animation: flipUp .30s ease-out .30s forwards; }
+    .fu .seam { position: absolute; top: 50%; left: 8px; right: 8px; height: 1px;
+                background: rgba(0,0,0,.6); transform: translateY(-.5px); z-index: 3; }
+    .fu--sec { color: #f0d060; box-shadow: 0 8px 24px rgba(0,0,0,.55), 0 0 18px rgba(212,175,55,.12); }
+    .fu--sec .fh { border-color: rgba(212,175,55,.4); }
+    .fu--sec .fh--t { background: linear-gradient(180deg,#1c1622 0%,#141019 100%); }
+    .fu--sec .fh--b { background: linear-gradient(180deg,#0d0a12 0%,#181321 100%); }
+    .fu--sec .num { text-shadow: 0 0 12px rgba(240,208,96,.4); }
+
+    /* ── Photo memory tunnel ── */
     @media (prefers-reduced-motion:reduce) {
-      .photo-card { opacity:1 !important; transform:translate(-50%,-50%) !important; }
+      .tunnel-frame { opacity:1 !important; }
+      .tunnel-frame[data-frame="5"] { transform:translate(-50%,-50%) !important; }
+      .tunnel-frame:not([data-frame="5"]) { display:none !important; }
     }
 
     /* ── Mobile — most guests open this on a phone ── */
     @media (max-width: 640px) {
       /* Countdown → clean 2×2 instead of an awkward 3+1 wrap */
       .cd-grid { max-width: 190px; }
-
-      /* Photo collage — shrink + tuck the scattered cards so none clip off-screen */
-      .photo-card--main { width: 150px; height: 194px; }
-      .photo-card--1 { left: 1%;  top: 15%;    width: 96px;  height: 124px; }
-      .photo-card--2 { left: 31%; top: 4%;     width: 84px;  height: 108px; }
-      .photo-card--3 { right: 1%; top: 11%;    width: 104px; height: 134px; }
-      .photo-card--4 { right: 5%; bottom: 11%; width: 92px;  height: 118px; }
-      .photo-card--5 { left: 5%;  bottom: 6%;  width: 88px;  height: 112px; }
 
       /* Trim the tall section padding so mobile isn't endless scrolling */
       section[data-screen-label="Story"],
@@ -82,9 +88,10 @@
      MONOGRAM REVEAL OVERLAY
 ════════════════════════════════════════════ -->
 <div style="{{ curtainOverlayStyle }}" onClick="{{ handleEnter }}" ref="{{ overlayRef }}" role="button" tabIndex="0" aria-label="Tap to reveal the invitation">
+  <div id="mono-veil" ref="{{ veilRef }}" style="position:absolute;inset:0;background:#08070a;pointerEvents:none;"></div>
   <canvas id="mono-canvas" style="position:absolute;inset:0;width:100%;height:100%;display:block;"></canvas>
   <img id="mono-logo-src" src="./uploads/f3f35027-bbb5-49ba-98a2-02ba2d5fb631.png" alt="" style="position:absolute;width:1px;height:1px;opacity:0;pointerEvents:none;" />
-  <p style="position:absolute;bottom:3.5rem;left:0;right:0;textAlign:center;fontFamily:'Montserrat',sans-serif;fontSize:.78rem;fontWeight:500;letterSpacing:.22em;textTransform:uppercase;color:rgba(212,175,55,.6);animation:tapHint 2.5s ease-in-out infinite;pointerEvents:none;">{{ monoHint }}</p>
+  <p id="mono-hint" style="position:absolute;bottom:3.5rem;left:0;right:0;textAlign:center;fontFamily:'Montserrat',sans-serif;fontSize:.78rem;fontWeight:500;letterSpacing:.22em;textTransform:uppercase;color:rgba(212,175,55,.6);animation:tapHint 2.5s ease-in-out infinite;pointerEvents:none;transition:opacity .4s ease;">{{ monoHint }}</p>
 </div>
 
 <!-- ══════════════════════════════════════════
@@ -158,27 +165,43 @@
       <section data-screen-label="Countdown" style="display:flex;flexDirection:column;alignItems:center;justifyContent:center;padding:2.5rem 2rem 4rem;background:rgba(8,7,10,0.50);position:relative;" aria-labelledby="countdown-head">
         <p id="countdown-head" style="fontFamily:'Montserrat',sans-serif;fontSize:.68rem;fontWeight:500;letterSpacing:.22em;textTransform:uppercase;color:rgba(212,175,55,.6);marginBottom:1.75rem;">The celebration begins in</p>
         <ol class="cd-grid" style="display:flex;gap:.75rem;flexWrap:wrap;justifyContent:center;alignItems:flex-start;listStyle:none;padding:0;" aria-label="Time remaining until the celebration">
-          <li style="display:flex;flexDirection:column;alignItems:center;gap:.5rem;">
-            <div style="width:84px;height:84px;display:flex;alignItems:center;justifyContent:center;background:#fdfbf7;borderRadius:.875rem;border:1px solid rgba(212,175,55,.3);boxShadow:0 2px 12px rgba(42,24,16,.07);">
-              <span style="fontFamily:'Playfair Display',serif;fontSize:2.2rem;fontWeight:700;lineHeight:1;background:linear-gradient(180deg,#9a6f10 0%,#d4af37 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;backgroundClip:text;">{{ days }}</span>
+          <li style="display:flex;flexDirection:column;alignItems:center;gap:.75rem;">
+            <div class="fu" id="fu-days" aria-hidden="true">
+              <div class="fh fh--t" data-top><span class="num">--</span></div>
+              <div class="fh fh--b" data-bot><span class="num">--</span></div>
+              <div class="fh fh--t flap flap-front" data-front><span class="num">--</span></div>
+              <div class="fh fh--b flap flap-back" data-back><span class="num">--</span></div>
+              <div class="seam"></div>
             </div>
             <span style="fontFamily:'Montserrat',sans-serif;fontSize:.6rem;fontWeight:500;letterSpacing:.16em;textTransform:uppercase;color:rgba(212,175,55,.6);">Days</span>
           </li>
-          <li style="display:flex;flexDirection:column;alignItems:center;gap:.5rem;">
-            <div style="width:84px;height:84px;display:flex;alignItems:center;justifyContent:center;background:#fdfbf7;borderRadius:.875rem;border:1px solid rgba(212,175,55,.3);boxShadow:0 2px 12px rgba(42,24,16,.07);">
-              <span style="fontFamily:'Playfair Display',serif;fontSize:2.2rem;fontWeight:700;lineHeight:1;background:linear-gradient(180deg,#9a6f10 0%,#d4af37 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;backgroundClip:text;">{{ hours }}</span>
+          <li style="display:flex;flexDirection:column;alignItems:center;gap:.75rem;">
+            <div class="fu" id="fu-hours" aria-hidden="true">
+              <div class="fh fh--t" data-top><span class="num">--</span></div>
+              <div class="fh fh--b" data-bot><span class="num">--</span></div>
+              <div class="fh fh--t flap flap-front" data-front><span class="num">--</span></div>
+              <div class="fh fh--b flap flap-back" data-back><span class="num">--</span></div>
+              <div class="seam"></div>
             </div>
             <span style="fontFamily:'Montserrat',sans-serif;fontSize:.6rem;fontWeight:500;letterSpacing:.16em;textTransform:uppercase;color:rgba(212,175,55,.6);">Hours</span>
           </li>
-          <li style="display:flex;flexDirection:column;alignItems:center;gap:.5rem;">
-            <div style="width:84px;height:84px;display:flex;alignItems:center;justifyContent:center;background:#fdfbf7;borderRadius:.875rem;border:1px solid rgba(212,175,55,.3);boxShadow:0 2px 12px rgba(42,24,16,.07);">
-              <span style="fontFamily:'Playfair Display',serif;fontSize:2.2rem;fontWeight:700;lineHeight:1;background:linear-gradient(180deg,#9a6f10 0%,#d4af37 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;backgroundClip:text;">{{ minutes }}</span>
+          <li style="display:flex;flexDirection:column;alignItems:center;gap:.75rem;">
+            <div class="fu" id="fu-minutes" aria-hidden="true">
+              <div class="fh fh--t" data-top><span class="num">--</span></div>
+              <div class="fh fh--b" data-bot><span class="num">--</span></div>
+              <div class="fh fh--t flap flap-front" data-front><span class="num">--</span></div>
+              <div class="fh fh--b flap flap-back" data-back><span class="num">--</span></div>
+              <div class="seam"></div>
             </div>
             <span style="fontFamily:'Montserrat',sans-serif;fontSize:.6rem;fontWeight:500;letterSpacing:.16em;textTransform:uppercase;color:rgba(212,175,55,.6);">Minutes</span>
           </li>
-          <li style="display:flex;flexDirection:column;alignItems:center;gap:.5rem;">
-            <div style="width:84px;height:84px;display:flex;alignItems:center;justifyContent:center;background:#fdfbf7;borderRadius:.875rem;border:1px solid rgba(212,175,55,.3);boxShadow:0 2px 12px rgba(42,24,16,.07);">
-              <span style="fontFamily:'Playfair Display',serif;fontSize:2.2rem;fontWeight:700;lineHeight:1;background:linear-gradient(180deg,#9a6f10 0%,#d4af37 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;backgroundClip:text;">{{ seconds }}</span>
+          <li style="display:flex;flexDirection:column;alignItems:center;gap:.75rem;">
+            <div class="fu fu--sec" id="fu-seconds" aria-hidden="true">
+              <div class="fh fh--t" data-top><span class="num">--</span></div>
+              <div class="fh fh--b" data-bot><span class="num">--</span></div>
+              <div class="fh fh--t flap flap-front" data-front><span class="num">--</span></div>
+              <div class="fh fh--b flap flap-back" data-back><span class="num">--</span></div>
+              <div class="seam"></div>
             </div>
             <span style="fontFamily:'Montserrat',sans-serif;fontSize:.6rem;fontWeight:500;letterSpacing:.16em;textTransform:uppercase;color:rgba(212,175,55,.6);">Seconds</span>
           </li>
@@ -206,43 +229,45 @@
     </article>
   </section>
 
-  <!-- ── PHOTO COLLAGE — scroll-driven ────── -->
-  <div id="photo-collage-wrap" style="height:280vh;position:relative;background:rgba(4,3,9,0.50);">
-    <section data-screen-label="Photo Collage" style="position:sticky;top:0;height:100vh;display:flex;flexDirection:column;alignItems:center;justifyContent:center;overflow:hidden;background:rgba(4,3,9,0.50);">
+  <!-- ── PHOTO MEMORY TUNNEL — scroll-driven fly-through ────── -->
+  <div id="photo-collage-wrap" style="height:440vh;position:relative;background:rgba(4,3,9,0.50);">
+    <section data-screen-label="Photo Collage" style="position:sticky;top:0;height:100vh;display:flex;flexDirection:column;alignItems:center;justifyContent:center;overflow:hidden;background:radial-gradient(circle at 50% 45%,rgba(212,175,55,.06) 0%,transparent 65%),rgba(4,3,9,0.50);">
 
       <x-import component-from-global-scope="image-slot" from="./image-slot.js" hint-size="1px,1px"></x-import>
 
       <!-- eyebrow -->
-      <div style="display:flex;alignItems:center;gap:1.2rem;marginBottom:2rem;position:relative;zIndex:2;">
+      <div style="position:absolute;top:clamp(4rem,10vh,7rem);left:0;right:0;display:flex;alignItems:center;justifyContent:center;gap:1.2rem;zIndex:60;">
         <div style="width:40px;height:1px;background:linear-gradient(to right,transparent,rgba(212,175,55,.5));"></div>
         <p style="fontFamily:'Montserrat',sans-serif;fontSize:.68rem;fontWeight:500;letterSpacing:.26em;textTransform:uppercase;color:rgba(212,175,55,.75);">Their story in frames</p>
         <div style="width:40px;height:1px;background:linear-gradient(to left,transparent,rgba(212,175,55,.5));"></div>
       </div>
 
-      <!-- card stage — cards fade & settle in on scroll progress -->
-      <div id="photo-stage" style="position:relative;width:min(94vw,980px);height:min(80vh,620px);">
+      <!-- tunnel stage — frames fly toward you as you scroll -->
+      <div id="photo-tunnel" style="position:relative;width:100%;height:100%;">
 
-        <div class="photo-card photo-card--1" data-card="1">
+        <div class="tunnel-frame" data-frame="0" style="position:absolute;left:50%;top:47%;width:min(74vw,300px);height:min(58vh,452px);background:#100d14;border:1px solid rgba(212,175,55,.5);padding:9px;boxShadow:0 30px 80px rgba(0,0,0,.7);willChange:transform,opacity;transformOrigin:center;">
           <image-slot id="photo-1" placeholder="Photo 1" shape="rect" style="width:100%;height:100%;display:block;"></image-slot>
-          <span class="card-label">save the date</span>
         </div>
-        <div class="photo-card photo-card--2" data-card="2">
+        <div class="tunnel-frame" data-frame="1" style="position:absolute;left:50%;top:47%;width:min(74vw,300px);height:min(58vh,452px);background:#100d14;border:1px solid rgba(212,175,55,.5);padding:9px;boxShadow:0 30px 80px rgba(0,0,0,.7);willChange:transform,opacity;transformOrigin:center;">
           <image-slot id="photo-2" placeholder="Photo 2" shape="rect" style="width:100%;height:100%;display:block;"></image-slot>
         </div>
-        <div class="photo-card photo-card--3" data-card="3">
+        <div class="tunnel-frame" data-frame="2" style="position:absolute;left:50%;top:47%;width:min(74vw,300px);height:min(58vh,452px);background:#100d14;border:1px solid rgba(212,175,55,.5);padding:9px;boxShadow:0 30px 80px rgba(0,0,0,.7);willChange:transform,opacity;transformOrigin:center;">
           <image-slot id="photo-3" placeholder="Photo 3" shape="rect" style="width:100%;height:100%;display:block;"></image-slot>
         </div>
-        <div class="photo-card photo-card--4" data-card="4">
+        <div class="tunnel-frame" data-frame="3" style="position:absolute;left:50%;top:47%;width:min(74vw,300px);height:min(58vh,452px);background:#100d14;border:1px solid rgba(212,175,55,.5);padding:9px;boxShadow:0 30px 80px rgba(0,0,0,.7);willChange:transform,opacity;transformOrigin:center;">
           <image-slot id="photo-4" placeholder="Photo 4" shape="rect" style="width:100%;height:100%;display:block;"></image-slot>
         </div>
-        <div class="photo-card photo-card--5" data-card="5">
+        <div class="tunnel-frame" data-frame="4" style="position:absolute;left:50%;top:47%;width:min(74vw,300px);height:min(58vh,452px);background:#100d14;border:1px solid rgba(212,175,55,.5);padding:9px;boxShadow:0 30px 80px rgba(0,0,0,.7);willChange:transform,opacity;transformOrigin:center;">
           <image-slot id="photo-5" placeholder="Photo 5" shape="rect" style="width:100%;height:100%;display:block;"></image-slot>
         </div>
-        <div class="photo-card photo-card--main" data-card="main">
+        <div class="tunnel-frame" data-frame="5" style="position:absolute;left:50%;top:47%;width:min(76vw,312px);height:min(60vh,468px);background:#100d14;border:1px solid rgba(212,175,55,.6);padding:9px;boxShadow:0 30px 90px rgba(0,0,0,.75),0 0 50px rgba(212,175,55,.1);willChange:transform,opacity;transformOrigin:center;">
           <image-slot id="photo-main" placeholder="Couple photo" shape="rect" style="width:100%;height:100%;display:block;"></image-slot>
-          <span class="card-label">Arjita &amp; Archit</span>
+          <span style="position:absolute;bottom:-30px;left:0;right:0;textAlign:center;fontFamily:'Cormorant Garamond',Georgia,serif;fontSize:1rem;fontStyle:italic;color:#9a8456;">Arjita &amp; Archit</span>
         </div>
       </div>
+
+      <!-- scroll hint -->
+      <p id="tunnel-hint" style="position:absolute;bottom:2.4rem;left:0;right:0;textAlign:center;fontFamily:'Montserrat',sans-serif;fontSize:.62rem;fontWeight:500;letterSpacing:.22em;textTransform:uppercase;color:rgba(212,175,55,.55);animation:tapHint 2.5s ease-in-out infinite;pointerEvents:none;transition:opacity .5s ease;zIndex:60;">scroll</p>
 
     </section>
   </div>
@@ -311,6 +336,11 @@
 
 </main>
 
+<!-- ── MUSIC TOGGLE ── -->
+<sc-if value="{{ entered }}" hint-placeholder-val="{{ false }}">
+  <button onClick="{{ toggleMute }}" type="button" aria-label="{{ muteAriaLabel }}" style="position:fixed;right:1.1rem;bottom:1.1rem;zIndex:10000;width:44px;height:44px;borderRadius:50%;border:1px solid rgba(212,175,55,.35);background:rgba(8,7,10,.55);backdropFilter:blur(6px);color:#d4af37;fontFamily:'Montserrat',sans-serif;fontSize:1.15rem;display:flex;alignItems:center;justifyContent:center;cursor:pointer;boxShadow:0 4px 16px rgba(0,0,0,.35);">{{ muteGlyph }}</button>
+</sc-if>
+
 <!-- ── CONFETTI ── -->
 <canvas id="confetti-canvas" style="position:fixed;inset:0;pointerEvents:none;zIndex:9999;width:100vw;height:100vh;" aria-hidden="true"></canvas>
 </x-dc>
@@ -322,6 +352,7 @@ class Component extends DCLogic {
     entered: false, monoFormed: false,
     days: 0, hours: 0, minutes: 0, seconds: 0, countdownDone: false,
     scratched: false,
+    muted: (() => { try { return localStorage.getItem('roka-music-muted') === '1' } catch { return false } })(),
   }
 
   _countdownId      = null
@@ -354,10 +385,15 @@ class Component extends DCLogic {
   _monoCrispAlpha  = 0
   _overlayEl       = null
   _contentEl       = null
+  _veilEl          = null
   _overlayAlpha    = 1
   _contentAlpha    = 0
   _overlayFadeAt   = Infinity
   _contentFadeAt   = Infinity
+  _monoRainMode    = false
+  _rainLast        = 0
+  _veilWipeAt      = Infinity
+  _audio           = null
 
   // ── lifecycle ─────────────────────────────────────
   componentDidMount() {
@@ -381,6 +417,7 @@ class Component extends DCLogic {
     clearTimeout(this._resizeTimer)
     window.removeEventListener('resize', this._onResize)
     if (this._photoScrollFn) window.removeEventListener('scroll', this._photoScrollFn)
+    if (this._audio) { this._audio.pause(); this._audio.src = ''; this._audio = null }
     document.body.style.overflow = ''
   }
 
@@ -420,39 +457,113 @@ class Component extends DCLogic {
     const tick = () => {
       const r = this._computeRemaining()
       this.setState({ days:r.days, hours:r.hours, minutes:r.minutes, seconds:r.seconds, countdownDone:r.done })
+      this._applyFlips(r)
       if (r.done) { clearInterval(this._countdownId); this._countdownId = null }
     }
     tick()
     this._countdownId = setInterval(tick, 1000)
   }
 
+  // ── flip-clock tiles: flip a unit only when its value changes ──
+  _applyFlips(r) {
+    const pad = n => String(n).padStart(2, '0')
+    this._setFlip('days', String(r.days).padStart(2, '0'))
+    this._setFlip('hours', pad(r.hours))
+    this._setFlip('minutes', pad(r.minutes))
+    this._setFlip('seconds', pad(r.seconds))
+  }
+
+  _setFlip(unit, val) {
+    const fu = document.getElementById('fu-' + unit)
+    if (!fu) return
+    const top   = fu.querySelector('[data-top] .num')
+    const bot   = fu.querySelector('[data-bot] .num')
+    const front = fu.querySelector('[data-front]')
+    const back  = fu.querySelector('[data-back]')
+    const frontN = front.querySelector('.num')
+    const backN  = back.querySelector('.num')
+    const cur = top.textContent
+
+    // first paint (placeholder) — set instantly, no flip
+    if (cur === '--') {
+      top.textContent = bot.textContent = frontN.textContent = backN.textContent = val
+      return
+    }
+    if (cur === val) return
+
+    frontN.textContent = cur          // folding flap shows the OLD value's top
+    backN.textContent  = val          // unfolding flap shows the NEW value's bottom
+    top.textContent    = val          // static top switches to NEW immediately
+    // static bottom stays OLD until the fold completes
+
+    front.classList.remove('anim'); back.classList.remove('anim')
+    void fu.offsetWidth               // restart the CSS animations
+    front.classList.add('anim'); back.classList.add('anim')
+
+    clearTimeout(fu._flipT)
+    fu._flipT = setTimeout(() => { bot.textContent = val }, 300)
+  }
+
   handleEnter = () => {
     if (this.state.entered) return
+    // ── background music — must start from this user gesture or autoplay is blocked ──
+    if (!this._audio) {
+      this._audio = new Audio('./uploads/song1.mp3')
+      this._audio.loop = true
+      this._audio.volume = 0.4
+      this._audio.muted = this.state.muted
+    }
+    try { this._audio.play().catch(() => {}) } catch (e) {}
     const now = performance.now()
-    this._overlayFadeAt = now + 1300
-    this._contentFadeAt = now + 850
+    // ── Gold Rain reveal: the assembled monogram erupts upward as a fountain,
+    //    then rains down under gravity while a top→bottom wipe washes the dark away.
+    this._monoRainMode = true
+    this._rainLast = now
+    this._veilWipeAt = now + 220
+    this._contentFadeAt = now + 720
+    this._monoCrispAlpha = 0                 // logo dissolves straight into its particles
+    const w = this._monoW, h = this._monoH
     const parts = this._monoParticles || []
     parts.forEach((p) => {
       const cur = this._particleNow(p, now)
-      p.sx = cur.x; p.sy = cur.y; p.sa = cur.a
-      const ang = Math.random() * Math.PI * 2
-      const rad = Math.max(this._monoW, this._monoH) * (0.5 + Math.random() * 0.6)
-      p.tx = this._monoCx + Math.cos(ang) * rad
-      p.ty = this._monoCy + Math.sin(ang) * rad
-      p.ta = 0
-      p.dur = 1150 + Math.random() * 350
-      p.burst = true
-      p.segStart = now
+      p.x = cur.x; p.y = cur.y; p.a = 1
+      p.vx = (Math.random() - 0.5) * 240      // px/sec — spread outward
+      p.vy = -(280 + Math.random() * 420)     // launch up (fountain)
+      p.rainSize = p.size
+      p.isDrop = false
     })
+    // extra falling motes for a fuller shower
+    const extra = Math.min(220, Math.round(w / 5))
+    for (let i = 0; i < extra; i++) {
+      parts.push({
+        x: Math.random() * w, y: -20 - Math.random() * h * 0.7,
+        vx: (Math.random() - 0.5) * 34, vy: 240 + Math.random() * 280,
+        a: 0.35 + Math.random() * 0.6, size: 0.8 + Math.random() * 1.7,
+        rainSize: 0.8 + Math.random() * 1.7, isDrop: true,
+      })
+    }
+    const hint = document.getElementById('mono-hint')
+    if (hint) hint.style.opacity = '0'
+    // safety: fully remove the overlay once the reveal has finished, so nothing
+    // (hint text / cleared canvas) can linger over the page
+    setTimeout(() => { if (this._overlayEl) this._overlayEl.style.display = 'none' }, 3000)
     this.setState({ entered: true, monoFormed: false })
     document.body.style.overflow = ''
+  }
+
+  // ── music mute toggle — persists across reloads via localStorage ──
+  _toggleMute = () => {
+    const next = !this.state.muted
+    if (this._audio) this._audio.muted = next
+    try { localStorage.setItem('roka-music-muted', next ? '1' : '0') } catch (e) {}
+    this.setState({ muted: next })
   }
 
   // ── monogram reveal — assembles from the couple's own logo, then bursts open ──
   _initMonoCanvas() {
     const canvas = document.getElementById('mono-canvas')
     if (!canvas) return
-    const dpr = Math.min(window.devicePixelRatio || 1, 2)
+    const dpr = Math.min(window.devicePixelRatio || 1, 3)
     const w = window.innerWidth, h = window.innerHeight
     this._monoW = w; this._monoH = h
     this._monoBox = Math.max(200, Math.min(360, Math.min(w, h) * 0.5))
@@ -465,6 +576,8 @@ class Component extends DCLogic {
     const ctx = canvas.getContext('2d')
     ctx.setTransform(1, 0, 0, 1, 0, 0)
     ctx.scale(dpr, dpr)
+    ctx.imageSmoothingEnabled = true
+    ctx.imageSmoothingQuality = 'high'
     this._monoCtx = ctx
     if (this._monoImg) this._seedMonogram()
     if (!this._monoRaf) this._monoRaf = requestAnimationFrame(this.monoLoop)
@@ -538,6 +651,62 @@ class Component extends DCLogic {
   monoLoop = () => {
     const now = performance.now()
 
+    // ── Gold Rain reveal branch: physics shower + top→bottom veil wipe ──
+    if (this._monoRainMode) {
+      const dt = Math.min(0.05, (now - (this._rainLast || now)) / 1000)
+      this._rainLast = now
+
+      if (now >= this._contentFadeAt) {
+        this._contentAlpha += (1 - this._contentAlpha) * 0.045
+        if (this._contentAlpha > 0.996) this._contentAlpha = 1
+      }
+      if (this._contentEl) this._contentEl.style.opacity = String(this._contentAlpha)
+      if (this._overlayEl) this._overlayEl.style.pointerEvents = 'none'
+
+      // veil wipe (matches the 2c demo timing)
+      let wipeDone = false
+      if (this._veilEl && now >= this._veilWipeAt) {
+        const wt = Math.min(1, (now - this._veilWipeAt) / 1700)
+        const we = wt < 0.5 ? 4 * wt * wt * wt : 1 - Math.pow(-2 * wt + 2, 3) / 2
+        const edge = we * (this._monoH + 140)
+        const m = 'linear-gradient(180deg, transparent 0px, transparent ' + Math.max(0, edge - 150) + 'px, black ' + edge + 'px)'
+        this._veilEl.style.webkitMaskImage = m
+        this._veilEl.style.maskImage = m
+        if (wt >= 1) { this._veilEl.style.display = 'none'; wipeDone = true }
+      }
+
+      // physics + draw
+      const rctx = this._monoCtx
+      let alive = false
+      if (rctx && this._monoParticles) {
+        rctx.clearRect(0, 0, this._monoW, this._monoH)
+        for (const p of this._monoParticles) {
+          p.vy += 780 * dt
+          p.x += p.vx * dt
+          p.y += p.vy * dt
+          if (p.y > this._monoH + 40) p.a -= 1.6 * dt
+          if (p.a > 0.01 && p.y < this._monoH + 80) {
+            alive = true
+            rctx.globalAlpha = Math.max(0, Math.min(1, p.a))
+            rctx.fillStyle = '#e8c97a'
+            rctx.beginPath()
+            rctx.arc(p.x, p.y, p.rainSize || p.size, 0, Math.PI * 2)
+            rctx.fill()
+          }
+        }
+        rctx.globalAlpha = 1
+      }
+
+      if ((wipeDone || (this._veilEl && this._veilEl.style.display === 'none')) && !alive) {
+        if (rctx) rctx.clearRect(0, 0, this._monoW, this._monoH)
+        if (this._overlayEl) this._overlayEl.style.opacity = '0'
+        this._monoRaf = null
+        return
+      }
+      this._monoRaf = requestAnimationFrame(this.monoLoop)
+      return
+    }
+
     // overlay fade-out + content fade-in — driven imperatively (not CSS transitions)
     // so they can't be interrupted by this same continuously-running loop
     if (now >= this._overlayFadeAt) {
@@ -569,7 +738,7 @@ class Component extends DCLogic {
           dx += Math.sin(wob) * 2.4
           dy += Math.cos(wob * 0.8) * 2.4
         }
-        const dim = (formed && !p.burst && r.t >= 1) ? 0.4 : 1
+        const dim = (formed && !p.burst && r.t >= 1) ? Math.max(0, 0.4 - this._monoCrispAlpha * 0.4) : 1
         const sizeMul = (p.burst && r.t < 1) ? 1.5 : 1
         if (r.a > 0.01) {
           ctx.save()
@@ -818,32 +987,37 @@ class Component extends DCLogic {
     const rect = wrap.getBoundingClientRect()
     const scrollable = wrap.offsetHeight - window.innerHeight
     const progress = Math.max(0, Math.min(1, -rect.top / scrollable))
-    this._updatePhotoCards(progress)
+    this._updatePhotoTunnel(progress)
   }
 
-  _updatePhotoCards(p) {
-    const eo = t => 1 - Math.pow(1 - Math.max(0, Math.min(1, t)), 3)
-    const ph = (t, a, b) => eo((t - a) / (b - a))
-    // main settles first, surrounding cards cascade in staggered
-    const defs = [
-      { sel:'--main', rot:0,   start:0.00, end:0.28, main:true },
-      { sel:'--1',    rot:-9,  start:0.10, end:0.42 },
-      { sel:'--2',    rot:-4,  start:0.20, end:0.52 },
-      { sel:'--3',    rot:7,   start:0.30, end:0.62 },
-      { sel:'--4',    rot:5,   start:0.40, end:0.72 },
-      { sel:'--5',    rot:-6,  start:0.50, end:0.82 },
-    ]
-    defs.forEach(({ sel, rot, start, end, main }) => {
-      const el = document.querySelector('.photo-card' + sel)
-      if (!el) return
-      const prog = ph(p, start, end)
-      const dy  = -40 * (1 - prog)      // drops down from above
-      const sc  = 0.92 + 0.08 * prog    // scales up to full size
-      const rz  = rot * prog            // settles into resting tilt
-      const pre = main ? 'translate(-50%,-50%) ' : ''
-      el.style.transform = pre + 'translateY(' + dy + 'px) rotate(' + rz + 'deg) scale(' + sc + ')'
-      el.style.opacity   = String(prog)
-    })
+  // ── memory tunnel — scroll flies the camera through 6 frames in depth ──
+  _updatePhotoTunnel(p) {
+    const N = 6
+    const camZ = p * (N + 0.4) - 0.55
+    for (let i = 0; i < N; i++) {
+      const fr = document.querySelector('.tunnel-frame[data-frame="' + i + '"]')
+      if (!fr) continue
+      const rel = i - camZ                       // <0 behind camera, >0 ahead in depth
+      const vis = rel > -0.85 && rel < 4.4
+      fr.style.display = vis ? 'block' : 'none'
+      if (!vis) continue
+      let s = 1.5 / (1 + Math.max(0, rel) * 0.72)
+      if (rel < 0) s *= 1 + (-rel) * 1.7          // swells past you as it exits
+      let op
+      if (rel < 0) op = Math.max(0, 1 + rel / 0.8)
+      else if (rel > 3) op = Math.max(0, 1 - (rel - 3) / 1.3)
+      else op = 1
+      const side = (i % 2 === 0 ? -1 : 1)
+      const depth = Math.min(Math.max(rel, 0), 3)
+      const xo = side * (26 + 46 * depth) * Math.min(s, 1)
+      const yo = ((i % 3) - 1) * 14 * depth
+      fr.style.transform = 'translate(-50%,-50%) translate(' + xo + 'px,' + yo + 'px) scale(' + s + ')'
+      fr.style.opacity = String(op)
+      fr.style.zIndex = String(Math.round(200 - rel * 20))
+      fr.style.filter = rel > 1.7 ? 'blur(' + Math.min(3, (rel - 1.7) * 1.5) + 'px)' : 'none'
+    }
+    const hint = document.getElementById('tunnel-hint')
+    if (hint) hint.style.opacity = p > 0.015 ? '0' : '1'
   }
 
   _triggerReveal() {
@@ -851,6 +1025,7 @@ class Component extends DCLogic {
     this.setState({ scratched: true })
     setTimeout(() => this._observeSections(), 150)
     setTimeout(() => this._initPhotoScroll(), 250)
+    setTimeout(() => this._applyFlips(this._computeRemaining()), 200)
     const c = this._scrCanvas
     if (c) { c.style.transition='opacity .9s ease'; c.style.opacity='0'; setTimeout(()=>{c.style.pointerEvents='none'},900) }
     this._launchConfetti()
@@ -908,14 +1083,16 @@ class Component extends DCLogic {
 
   // ── renderVals ────────────────────────────────────
   renderVals() {
-    const { entered, monoFormed, days, hours, minutes, seconds, countdownDone, scratched } = this.state
+    const { entered, monoFormed, days, hours, minutes, seconds, countdownDone, scratched, muted } = this.state
     const pad = n => String(n).padStart(2,'0')
 
     return {
       // Monogram reveal overlay (opacity is owned entirely by monoLoop — kept out of this style object on purpose, or a re-render would stomp it)
-      curtainOverlayStyle: { position:'fixed', inset:0, zIndex:9999, display:'flex', alignItems:'center', justifyContent:'center', background:'#08070a', cursor:'pointer', pointerEvents: entered?'none':'all' },
+      entered,
+      curtainOverlayStyle: { position:'fixed', inset:0, zIndex:9999, display:'flex', alignItems:'center', justifyContent:'center', background:'transparent', cursor:'pointer', pointerEvents: entered?'none':'all' },
       overlayRef: (el) => { this._overlayEl = el; if (el) el.style.opacity = String(this._overlayAlpha) },
-      monoHint: monoFormed ? 'Tap to continue' : 'Assembling…',
+      veilRef: (el) => { this._veilEl = el },
+      monoHint: entered ? '' : (monoFormed ? 'Tap to continue' : 'Assembling…'),
 
       // Content (opacity is owned entirely by monoLoop too, for the same reason)
       contentStyle: { position:'relative', zIndex:2, minHeight:'100vh' },
@@ -928,9 +1105,15 @@ class Component extends DCLogic {
       // Scratch
       scratched, showScratchHint: !scratched,
 
+      // Music toggle
+      muted,
+      muteGlyph: muted ? '♪⃠' : '♪',
+      muteAriaLabel: muted ? 'Unmute background music' : 'Mute background music',
+
       // Handlers
       handleEnter: this.handleEnter,
       openInMaps: this._openInMaps,
+      toggleMute: this._toggleMute,
     }
   }
 }

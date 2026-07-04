@@ -996,6 +996,13 @@ class Component extends DCLogic {
     // cache frame elements once — a querySelector per frame per scroll tick was extra
     // unnecessary work on top of the layout thrash below
     this._tunnelFrames = Array.from({ length: 6 }, (_, i) => document.querySelector('.tunnel-frame[data-frame="' + i + '"]'))
+    // reduced motion: the CSS @media(prefers-reduced-motion) block already lays the frames
+    // out statically, so skip the scroll listener + per-tick update loop entirely
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    // per-frame cache of the last style values written, so redundant assignments are skipped
+    this._tunnelState = this._tunnelFrames.map(() => ({}))
+    // blur is no longer animated per tick — clear any filter once so none is left stale
+    this._tunnelFrames.forEach((fr) => { if (fr) fr.style.filter = '' })
     // rAF-coalesce: a 'scroll' event can fire far faster than the display can paint,
     // especially during mobile momentum scrolling — without this, the handler below
     // can fall behind and appear to freeze mid-gesture
@@ -1013,6 +1020,10 @@ class Component extends DCLogic {
     const rect = wrap.getBoundingClientRect()
     const scrollable = wrap.offsetHeight - window.innerHeight
     const progress = Math.max(0, Math.min(1, -rect.top / scrollable))
+    // skip when scroll hasn't moved progress (e.g. clamped at 0/1 outside the section) —
+    // stops the update loop from re-running on every scroll tick beyond the section bounds
+    if (progress === this._lastProgress) return
+    this._lastProgress = progress
     this._updatePhotoTunnel(progress)
   }
 
@@ -1023,12 +1034,16 @@ class Component extends DCLogic {
     for (let i = 0; i < N; i++) {
       const fr = this._tunnelFrames && this._tunnelFrames[i]
       if (!fr) continue
+      const st = this._tunnelState[i]
       const rel = i - camZ                       // <0 behind camera, >0 ahead in depth
       const vis = rel > -0.85 && rel < 4.4
       // visibility, not display — toggling display:none/block forces a layout reflow on
-      // every scroll tick, which is what was freezing scrolling mid-gesture on mobile Safari
-      fr.style.visibility = vis ? 'visible' : 'hidden'
-      fr.style.pointerEvents = vis ? '' : 'none'
+      // every scroll tick, which was freezing scrolling mid-gesture on mobile Safari.
+      // only write each style when its value actually changed.
+      const visVal = vis ? 'visible' : 'hidden'
+      if (st.visibility !== visVal) { fr.style.visibility = visVal; st.visibility = visVal }
+      const peVal = vis ? '' : 'none'
+      if (st.pointerEvents !== peVal) { fr.style.pointerEvents = peVal; st.pointerEvents = peVal }
       if (!vis) continue
       let s = 1.5 / (1 + Math.max(0, rel) * 0.72)
       if (rel < 0) s *= 1 + (-rel) * 1.7          // swells past you as it exits
@@ -1040,13 +1055,18 @@ class Component extends DCLogic {
       const depth = Math.min(Math.max(rel, 0), 3)
       const xo = side * (26 + 46 * depth) * Math.min(s, 1)
       const yo = ((i % 3) - 1) * 14 * depth
-      fr.style.transform = 'translate(-50%,-50%) translate(' + xo + 'px,' + yo + 'px) scale(' + s + ')'
-      fr.style.opacity = String(op)
-      fr.style.zIndex = String(Math.round(200 - rel * 20))
-      fr.style.filter = rel > 1.7 ? 'blur(' + Math.min(3, (rel - 1.7) * 1.5) + 'px)' : 'none'
+      const tf = 'translate(-50%,-50%) translate(' + xo + 'px,' + yo + 'px) scale(' + s + ')'
+      if (st.transform !== tf) { fr.style.transform = tf; st.transform = tf }
+      const opv = String(op)
+      if (st.opacity !== opv) { fr.style.opacity = opv; st.opacity = opv }
+      const z = Math.round(200 - rel * 20)      // only write z-index when its rounded value changes
+      if (st.zIndex !== z) { fr.style.zIndex = String(z); st.zIndex = z }
     }
-    const hint = document.getElementById('tunnel-hint')
-    if (hint) hint.style.opacity = p > 0.015 ? '0' : '1'
+    const hint = this._tunnelHint || (this._tunnelHint = document.getElementById('tunnel-hint'))
+    if (hint) {
+      const hv = p > 0.015 ? '0' : '1'
+      if (this._lastHintOp !== hv) { hint.style.opacity = hv; this._lastHintOp = hv }
+    }
   }
 
   _triggerReveal() {

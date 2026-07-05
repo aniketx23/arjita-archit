@@ -21,6 +21,24 @@ React/ReactDOM are loaded from `unpkg.com` at runtime (see `REACT_URL`/`REACT_DO
 
 There's no lint or test command — verify changes by loading the page in a browser and checking the console for `[dc-runtime]` errors/warnings.
 
+## Emergency rollback (restore the live site in one command)
+
+The live site (`https://arjita-archit.vercel.app/`) auto-redeploys from `git push` to `main`. If a change you pushed misbehaves on a real phone (the photo section is the usual suspect), restore the last-known-good version with:
+
+```bash
+./rollback.sh            # restore the commit tagged 'stable' and push it live
+./rollback.sh <ref>      # or restore any specific commit/tag, e.g. ./rollback.sh 5cbcbc6
+```
+
+`rollback.sh` makes a **new** commit that restores `RokaInvite.dc.html` from the `stable` tag and pushes — it never rewrites history, so it's safe to run anytime. Vercel redeploys the restored version in ~30s.
+
+The **`stable`** tag marks the mobile-safe baseline (currently the pure-CSS scrapbook reveal at commit `5cbcbc6` — no scroll-coupled JS, so the photo section can't freeze). **After you confirm a newer version works on a real phone**, move the tag forward so future rollbacks return to it:
+
+```bash
+git tag -f -a stable -m "new known-good" HEAD   # re-point 'stable' at the current commit
+git push -f origin stable                        # publish the moved tag
+```
+
 **Cache gotcha**: the sidecar `.image-slots.state.json` has no `Cache-Control` header under a plain static server, so browsers apply heuristic caching — a normal reload (even one that feels like a hard refresh) can serve a stale copy for several minutes right after editing it. `image-slot.js`'s fetch now uses `{ cache: 'no-store' }` to prevent this, but keep it in mind if you ever bypass that fetch (e.g. testing via curl) and the browser doesn't reflect a change you're sure landed on disk.
 
 ## Architecture

@@ -270,7 +270,11 @@
       this._subFn = () => this._render();
       // Shadow-DOM listeners live with the shadow DOM — bound once here so
       // disconnect/reconnect (e.g. React remount) doesn't stack handlers.
-      this._empty.addEventListener('click', () => this._input.click());
+      // click-to-browse is an authoring affordance — only when the host bridge is present.
+      // On a shared/published page the slot is read-only, so a guest clicking does nothing.
+      this._empty.addEventListener('click', () => {
+        if (window.omelette && window.omelette.writeFile) this._input.click();
+      });
       root.addEventListener('click', (e) => {
         const act = e.target && e.target.getAttribute && e.target.getAttribute('data-act');
         if (act === 'replace') { this._exitReframe(true); this._input.click(); }
@@ -388,10 +392,15 @@
         ImageSlot._warned = true;
         console.warn('<image-slot> without an id will not persist its dropped image.');
       }
-      this.addEventListener('dragenter', this);
-      this.addEventListener('dragover', this);
-      this.addEventListener('dragleave', this);
-      this.addEventListener('drop', this);
+      // Drag-and-drop upload is an authoring affordance too — only wire it when the host
+      // bridge is present. On a published invite the slot is a read-only photo display;
+      // guests can't drop, browse, or replace images.
+      if (window.omelette && window.omelette.writeFile) {
+        this.addEventListener('dragenter', this);
+        this.addEventListener('dragover', this);
+        this.addEventListener('dragleave', this);
+        this.addEventListener('drop', this);
+      }
       subs.add(this._subFn);
       // width%/height% in _applyView encode the frame aspect at call time —
       // a host resize (responsive grid, pane divider) would stretch the
@@ -638,7 +647,10 @@
         this._img.style.display = 'none';
         this._img.removeAttribute('src');
         this._ghost.removeAttribute('src');
-        this._empty.style.display = 'flex';
+        // Only show the "drop an image" empty state to an author. On a published page a
+        // guest just sees the blank frame (which fills the instant the sidecar loads),
+        // never a drop-zone prompt.
+        this._empty.style.display = editable ? 'flex' : 'none';
         this.removeAttribute('data-filled');
       }
     }

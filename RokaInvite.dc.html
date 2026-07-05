@@ -68,19 +68,10 @@
     .fu--sec .fh--b { background: linear-gradient(180deg,#0d0a12 0%,#181321 100%); }
     .fu--sec .num { text-shadow: 0 0 12px rgba(240,208,96,.4); }
 
-    /* ── Photo memory scrapbook — trigger-once reveal + idle float ── */
-    /* per-frame tilt/offset ride in inline --tilt/--dx so they don't fight the class transform */
-    .tunnel-frame { opacity: 0;
-      transform: translate(var(--dx,0px), 40px) scale(.96) rotate(var(--tilt,0deg));
-      transition: opacity .85s ease, transform .85s cubic-bezier(.2,.8,.2,1); }
-    .tunnel-frame.visible { opacity: 1;
-      transform: translate(var(--dx,0px), 0) scale(1) rotate(var(--tilt,0deg)); }
-    .frame-float { position: relative; width: 100%; height: 100%;
-      animation: frameFloat 6s ease-in-out infinite; }
-    @keyframes frameFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-7px)} }
-    @media (prefers-reduced-motion: reduce) {
-      .tunnel-frame { opacity:1; transform:none; transition:none; }
-      .frame-float { animation:none; }
+    /* ── Velvet album — reduced motion shows the finished album, no turning ── */
+    @media (prefers-reduced-motion:reduce) {
+      .album-page { opacity:1 !important; transform:none !important; }
+      .album-sweep { display:none !important; }
     }
 
     /* ── Mobile — most guests open this on a phone ── */
@@ -244,57 +235,79 @@
     </article>
   </section>
 
-  <!-- ── PHOTO MEMORY SCRAPBOOK — trigger-once reveal ────── -->
-  <div id="photo-collage-wrap" style="position:relative;background:rgba(4,3,9,0.50);">
-    <section data-screen-label="Photo Collage" style="display:flex;flexDirection:column;alignItems:center;padding:6rem 1.25rem 7rem;background:radial-gradient(circle at 50% 45%,rgba(212,175,55,.06) 0%,transparent 65%),rgba(4,3,9,0.50);">
+  <!-- ── THEIR STORY — velvet album page-turn. Plays ONCE via IntersectionObserver
+       (never scroll-scrubbed, so fast scrolling can't stall it); springs animate
+       transform/opacity only, one page at a time — smooth on mid-range phones.
+       Tap turns the next page immediately; after the first pass taps keep cycling. ── -->
+  <section data-screen-label="Photo Collage" id="photo-album-sec" style="position:relative;minHeight:100vh;display:flex;flexDirection:column;alignItems:center;justifyContent:center;overflow:hidden;padding:5.5rem 1.5rem 5rem;background:radial-gradient(circle at 50% 45%,rgba(212,175,55,.06) 0%,transparent 65%),rgba(4,3,9,0.50);">
 
-      <x-import component-from-global-scope="image-slot" from="./image-slot.js" hint-size="1px,1px"></x-import>
+    <x-import component-from-global-scope="image-slot" from="./image-slot.js" hint-size="1px,1px"></x-import>
 
-      <!-- eyebrow -->
-      <div style="display:flex;alignItems:center;justifyContent:center;gap:1.2rem;marginBottom:3.5rem;">
-        <div style="width:40px;height:1px;background:linear-gradient(to right,transparent,rgba(212,175,55,.5));"></div>
-        <p style="fontFamily:'Montserrat',sans-serif;fontSize:.68rem;fontWeight:500;letterSpacing:.26em;textTransform:uppercase;color:rgba(212,175,55,.75);">Their story in frames</p>
-        <div style="width:40px;height:1px;background:linear-gradient(to left,transparent,rgba(212,175,55,.5));"></div>
+    <!-- eyebrow -->
+    <div style="display:flex;alignItems:center;justifyContent:center;gap:1.2rem;marginBottom:2.4rem;zIndex:5;">
+      <div style="width:40px;height:1px;background:linear-gradient(to right,transparent,rgba(212,175,55,.5));"></div>
+      <p style="fontFamily:'Montserrat',sans-serif;fontSize:.68rem;fontWeight:500;letterSpacing:.26em;textTransform:uppercase;color:rgba(212,175,55,.75);">Their story in frames</p>
+      <div style="width:40px;height:1px;background:linear-gradient(to left,transparent,rgba(212,175,55,.5));"></div>
+    </div>
+
+    <!-- album stage -->
+    <div id="album-stage" style="position:relative;width:min(76vw,312px);height:min(58vh,464px);cursor:pointer;zIndex:5;">
+      <div style="position:absolute;inset:-11px;border:1px solid rgba(212,175,55,.16);pointerEvents:none;"></div>
+      <div style="position:absolute;left:-16px;top:6%;bottom:6%;width:1px;background:linear-gradient(to bottom,transparent,rgba(212,175,55,.45),transparent);pointerEvents:none;"></div>
+
+      <!-- page 1 — the couple -->
+      <div class="album-page" data-page="0" style="position:absolute;inset:0;background:#100d14;border:1px solid rgba(212,175,55,.6);padding:9px;boxShadow:0 30px 90px rgba(0,0,0,.75),0 0 50px rgba(212,175,55,.1);willChange:transform,opacity;transformOrigin:left center;backfaceVisibility:hidden;overflow:hidden;opacity:0;">
+        <div style="width:100%;height:100%;display:flex;flexDirection:column;gap:7px;">
+          <image-slot id="photo-main" placeholder="Couple photo" shape="rect" style="flex:1 1 0;minHeight:0;width:100%;display:block;"></image-slot>
+          <span style="flex:none;textAlign:center;fontFamily:'Cormorant Garamond',Georgia,serif;fontSize:1rem;fontStyle:italic;color:#9a8456;paddingBottom:2px;">Arjita &amp; Archit</span>
+        </div>
+        <div class="album-sweep" style="position:absolute;top:-40px;bottom:-40px;left:0;width:55%;background:linear-gradient(105deg,transparent,rgba(253,243,214,.16),transparent);transform:translateX(-170%);pointerEvents:none;"></div>
       </div>
 
-      <!-- scrapbook stage — each frame reveals as it scrolls into view, then idle-floats -->
-      <div id="photo-tunnel" style="display:flex;flexDirection:column;alignItems:center;gap:3.2rem;">
-
-        <div class="tunnel-frame" data-frame="0" style="--tilt:-4deg;--dx:-14px;width:min(74vw,300px);height:min(58vh,452px);background:#100d14;border:1px solid rgba(212,175,55,.5);padding:9px;boxShadow:0 30px 80px rgba(0,0,0,.7);">
-          <div class="frame-float" style="animationDuration:6.2s;animationDelay:0s;">
-            <image-slot id="photo-1" placeholder="Photo 1" shape="rect" style="width:100%;height:100%;display:block;"></image-slot>
-          </div>
-        </div>
-        <div class="tunnel-frame" data-frame="1" style="--tilt:3deg;--dx:14px;width:min(74vw,300px);height:min(58vh,452px);background:#100d14;border:1px solid rgba(212,175,55,.5);padding:9px;boxShadow:0 30px 80px rgba(0,0,0,.7);">
-          <div class="frame-float" style="animationDuration:5.6s;animationDelay:.5s;">
-            <image-slot id="photo-2" placeholder="Photo 2" shape="rect" style="width:100%;height:100%;display:block;"></image-slot>
-          </div>
-        </div>
-        <div class="tunnel-frame" data-frame="2" style="--tilt:-3deg;--dx:-14px;width:min(74vw,300px);height:min(58vh,452px);background:#100d14;border:1px solid rgba(212,175,55,.5);padding:9px;boxShadow:0 30px 80px rgba(0,0,0,.7);">
-          <div class="frame-float" style="animationDuration:6.8s;animationDelay:.2s;">
-            <image-slot id="photo-3" placeholder="Photo 3" shape="rect" style="width:100%;height:100%;display:block;"></image-slot>
-          </div>
-        </div>
-        <div class="tunnel-frame" data-frame="3" style="--tilt:4deg;--dx:14px;width:min(74vw,300px);height:min(58vh,452px);background:#100d14;border:1px solid rgba(212,175,55,.5);padding:9px;boxShadow:0 30px 80px rgba(0,0,0,.7);">
-          <div class="frame-float" style="animationDuration:5.9s;animationDelay:.8s;">
-            <image-slot id="photo-4" placeholder="Photo 4" shape="rect" style="width:100%;height:100%;display:block;"></image-slot>
-          </div>
-        </div>
-        <div class="tunnel-frame" data-frame="4" style="--tilt:-2deg;--dx:-14px;width:min(74vw,300px);height:min(58vh,452px);background:#100d14;border:1px solid rgba(212,175,55,.5);padding:9px;boxShadow:0 30px 80px rgba(0,0,0,.7);">
-          <div class="frame-float" style="animationDuration:6.5s;animationDelay:.35s;">
-            <image-slot id="photo-5" placeholder="Photo 5" shape="rect" style="width:100%;height:100%;display:block;"></image-slot>
-          </div>
-        </div>
-        <div class="tunnel-frame" data-frame="5" style="--tilt:0deg;--dx:0px;width:min(76vw,312px);height:min(60vh,468px);background:#100d14;border:1px solid rgba(212,175,55,.6);padding:9px;boxShadow:0 30px 90px rgba(0,0,0,.75),0 0 50px rgba(212,175,55,.1);">
-          <div class="frame-float" style="animationDuration:7s;animationDelay:.6s;">
-            <image-slot id="photo-main" placeholder="Couple photo" shape="rect" style="width:100%;height:100%;display:block;"></image-slot>
-            <span style="position:absolute;bottom:-30px;left:0;right:0;textAlign:center;fontFamily:'Cormorant Garamond',Georgia,serif;fontSize:1rem;fontStyle:italic;color:#9a8456;">Arjita &amp; Archit</span>
-          </div>
-        </div>
+      <!-- page 2 -->
+      <div class="album-page" data-page="1" style="position:absolute;inset:0;background:#100d14;border:1px solid rgba(212,175,55,.5);padding:9px;boxShadow:0 30px 80px rgba(0,0,0,.7);willChange:transform,opacity;transformOrigin:left center;backfaceVisibility:hidden;overflow:hidden;opacity:0;">
+        <image-slot id="photo-2" placeholder="Photo 2" shape="rect" style="width:100%;height:100%;display:block;"></image-slot>
+        <div class="album-sweep" style="position:absolute;top:-40px;bottom:-40px;left:0;width:55%;background:linear-gradient(105deg,transparent,rgba(253,243,214,.16),transparent);transform:translateX(-170%);pointerEvents:none;"></div>
       </div>
 
-    </section>
-  </div>
+      <!-- page 3 -->
+      <div class="album-page" data-page="2" style="position:absolute;inset:0;background:#100d14;border:1px solid rgba(212,175,55,.5);padding:9px;boxShadow:0 30px 80px rgba(0,0,0,.7);willChange:transform,opacity;transformOrigin:left center;backfaceVisibility:hidden;overflow:hidden;opacity:0;">
+        <image-slot id="photo-3" placeholder="Photo 3" shape="rect" style="width:100%;height:100%;display:block;"></image-slot>
+        <div class="album-sweep" style="position:absolute;top:-40px;bottom:-40px;left:0;width:55%;background:linear-gradient(105deg,transparent,rgba(253,243,214,.16),transparent);transform:translateX(-170%);pointerEvents:none;"></div>
+      </div>
+
+      <!-- page 4 -->
+      <div class="album-page" data-page="3" style="position:absolute;inset:0;background:#100d14;border:1px solid rgba(212,175,55,.5);padding:9px;boxShadow:0 30px 80px rgba(0,0,0,.7);willChange:transform,opacity;transformOrigin:left center;backfaceVisibility:hidden;overflow:hidden;opacity:0;">
+        <image-slot id="photo-4" placeholder="Photo 4" shape="rect" style="width:100%;height:100%;display:block;"></image-slot>
+        <div class="album-sweep" style="position:absolute;top:-40px;bottom:-40px;left:0;width:55%;background:linear-gradient(105deg,transparent,rgba(253,243,214,.16),transparent);transform:translateX(-170%);pointerEvents:none;"></div>
+      </div>
+
+      <!-- page 5 -->
+      <div class="album-page" data-page="4" style="position:absolute;inset:0;background:#100d14;border:1px solid rgba(212,175,55,.5);padding:9px;boxShadow:0 30px 80px rgba(0,0,0,.7);willChange:transform,opacity;transformOrigin:left center;backfaceVisibility:hidden;overflow:hidden;opacity:0;">
+        <image-slot id="photo-5" placeholder="Photo 5" shape="rect" style="width:100%;height:100%;display:block;"></image-slot>
+        <div class="album-sweep" style="position:absolute;top:-40px;bottom:-40px;left:0;width:55%;background:linear-gradient(105deg,transparent,rgba(253,243,214,.16),transparent);transform:translateX(-170%);pointerEvents:none;"></div>
+      </div>
+
+      <!-- page 6 -->
+      <div class="album-page" data-page="5" style="position:absolute;inset:0;background:#100d14;border:1px solid rgba(212,175,55,.5);padding:9px;boxShadow:0 30px 80px rgba(0,0,0,.7);willChange:transform,opacity;transformOrigin:left center;backfaceVisibility:hidden;overflow:hidden;opacity:0;">
+        <image-slot id="photo-1" placeholder="Photo 1" shape="rect" style="width:100%;height:100%;display:block;"></image-slot>
+        <div class="album-sweep" style="position:absolute;top:-40px;bottom:-40px;left:0;width:55%;background:linear-gradient(105deg,transparent,rgba(253,243,214,.16),transparent);transform:translateX(-170%);pointerEvents:none;"></div>
+      </div>
+    </div>
+
+    <!-- page dots -->
+    <div id="album-dots" style="display:flex;gap:9px;marginTop:2.1rem;zIndex:5;">
+      <span class="album-dot" style="width:6px;height:6px;borderRadius:50%;background:rgba(212,175,55,.22);transition:background .4s ease;"></span>
+      <span class="album-dot" style="width:6px;height:6px;borderRadius:50%;background:rgba(212,175,55,.22);transition:background .4s ease;"></span>
+      <span class="album-dot" style="width:6px;height:6px;borderRadius:50%;background:rgba(212,175,55,.22);transition:background .4s ease;"></span>
+      <span class="album-dot" style="width:6px;height:6px;borderRadius:50%;background:rgba(212,175,55,.22);transition:background .4s ease;"></span>
+      <span class="album-dot" style="width:6px;height:6px;borderRadius:50%;background:rgba(212,175,55,.22);transition:background .4s ease;"></span>
+      <span class="album-dot" style="width:6px;height:6px;borderRadius:50%;background:rgba(212,175,55,.22);transition:background .4s ease;"></span>
+    </div>
+
+    <p id="album-hint" style="textAlign:center;fontFamily:'Montserrat',sans-serif;fontSize:.62rem;fontWeight:500;letterSpacing:.22em;textTransform:uppercase;color:rgba(212,175,55,.55);animation:tapHint 2.5s ease-in-out infinite;marginTop:1.1rem;zIndex:5;">✦ tap to turn the page ✦</p>
+
+  </section>
 
   <!-- ── CELEBRATION ──────────────────────── -->
   <section data-screen-label="Celebration" id="celebration" style="minHeight:80vh;display:flex;alignItems:center;justifyContent:center;padding:8rem 2rem;background:rgba(8,7,10,0.50);">
@@ -424,6 +437,7 @@ class Component extends DCLogic {
     this._startCountdown()
     this._scheduleInitScratch()
     this._observeSections()
+    this._initAlbum()
     this._initSparkles()
     this._initMonoCanvas()
     this._loadMonogramArt()
@@ -449,6 +463,9 @@ class Component extends DCLogic {
     clearTimeout(this._resizeTimer)
     window.removeEventListener('resize', this._onResize)
     document.removeEventListener('visibilitychange', this._onVisibilityChange)
+    if (this._albumIO) this._albumIO.disconnect()
+    clearTimeout(this._alAutoT)
+    if (this._alPages) this._alPages.forEach(pg => { if (pg._alSpr && pg._alSpr.raf) cancelAnimationFrame(pg._alSpr.raf) })
     if (this._audio) { this._audio.pause(); this._audio.src = ''; this._audio = null }
     document.body.style.overflow = ''
   }
@@ -473,7 +490,7 @@ class Component extends DCLogic {
       entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible') })
     }, { threshold: 0.22 })
     setTimeout(() => {
-      document.querySelectorAll('.section-panel, .countdown-card, .photo-stage, .tunnel-frame').forEach(el => io.observe(el))
+      document.querySelectorAll('.section-panel, .countdown-card, .photo-stage').forEach(el => io.observe(el))
     }, 200)
   }
 
@@ -1001,6 +1018,146 @@ class Component extends DCLogic {
     const d = this._scrCtx.getImageData(0,0,this._scrCanvas.width,this._scrCanvas.height).data
     let clear=0; for (let i=3;i<d.length;i+=4) if (d[i]<128) clear++
     if (clear/(d.length/4) >= 0.42) this._triggerReveal()
+  }
+
+  // ── velvet album — page-turns on a fixed timeline; NO scroll-scrubbing ──
+  // Triggered once by IntersectionObserver when the section enters view. A tiny
+  // spring engine animates transform/opacity only, one page at a time, so
+  // mid-range phones stay smooth. Tap = turn now; after the first full pass,
+  // taps keep cycling. Reduced motion: finished album, taps swap pages instantly.
+  _initAlbum() {
+    if (this._albumInit) return
+    const stage = document.getElementById('album-stage')
+    if (!stage) { setTimeout(() => this._initAlbum(), 150); return }
+    this._albumInit = true
+    this._alPages = Array.prototype.slice.call(stage.querySelectorAll('.album-page'))
+    this._alDots = Array.prototype.slice.call(document.querySelectorAll('#album-dots .album-dot'))
+    this._alCount = 0
+    this._alZ = 10
+    this._alPrm = false
+    try { this._alPrm = window.matchMedia('(prefers-reduced-motion: reduce)').matches } catch (e) {}
+    if (this._alPrm) {
+      this._alPages.forEach((pg, i) => { pg.style.zIndex = String(10 + i) })
+      this._alCount = this._alPages.length
+      this._alDot(this._alPages.length - 1)
+      const h = document.getElementById('album-hint')
+      if (h) { h.textContent = '✦ tap for the next photo ✦'; h.style.animation = 'none' }
+    } else {
+      this._alPages.forEach(pg => this._alSet(pg, { ry: -104, x: 10, s: 0.97, o: 0 }))
+    }
+    stage.addEventListener('click', () => this._albumTap())
+    try {
+      this._albumIO = new IntersectionObserver((ents) => {
+        for (let i = 0; i < ents.length; i++) {
+          if (ents[i].isIntersecting) {
+            this._albumIO.disconnect()
+            if (!this._alPrm && this._alCount === 0) this._albumAuto()
+            break
+          }
+        }
+      }, { threshold: 0.4 })
+      this._albumIO.observe(stage)
+    } catch (e) { if (!this._alPrm) this._albumAuto() }
+  }
+
+  _albumAuto() {
+    if (this._alAutoT) { clearTimeout(this._alAutoT); this._alAutoT = null }
+    this._alFlip()
+    if (this._alCount < this._alPages.length) {
+      this._alAutoT = setTimeout(() => this._albumAuto(), 2600)
+    }
+  }
+
+  _albumTap() {
+    if (!this._albumInit || !this._alPages || !this._alPages.length) return
+    if (this._alPrm) {
+      const n = this._alPages.length
+      const pg = this._alPages[this._alCount % n]
+      this._alCount++
+      this._alZ++
+      pg.style.zIndex = String(this._alZ)
+      this._alDot((this._alCount - 1) % n)
+      return
+    }
+    if (this._alAutoT) { clearTimeout(this._alAutoT); this._alAutoT = null }
+    if (this._alCount < this._alPages.length) this._albumAuto()
+    else this._alFlip()
+  }
+
+  _alFlip() {
+    const n = this._alPages.length
+    const idx = this._alCount % n
+    const pg = this._alPages[idx]
+    if (!pg) return
+    this._alCount++
+    this._alZ++
+    pg.style.zIndex = String(this._alZ)
+    const sw = pg.querySelector('.album-sweep')
+    if (sw) { sw.style.transition = 'none'; sw.style.transform = 'translateX(-170%)' }
+    this._alSet(pg, { ry: -104, x: 10, s: 0.97, o: 0 })
+    this._alSpring(pg, { ry: 0, x: 0, s: 1, o: 1 }, {
+      k: 120, d: 14, kMap: { o: 320, s: 170 },
+      onOvershoot: () => {
+        if (sw) { sw.style.transition = 'transform .95s ease'; sw.style.transform = 'translateX(520%)' }
+      }
+    })
+    this._alDot(idx)
+    const h = document.getElementById('album-hint')
+    if (h) h.textContent = this._alCount >= n ? '✦ tap to see them again ✦' : '✦ tap to turn the page ✦'
+  }
+
+  _alDot(active) {
+    if (!this._alDots) return
+    for (let i = 0; i < this._alDots.length; i++) {
+      this._alDots[i].style.background = i === active ? '#d4af37' : 'rgba(212,175,55,.22)'
+    }
+  }
+
+  // minimal spring engine — writes only transform + opacity
+  _alSet(el, v) {
+    el._alSpr = { cur: { ry: v.ry || 0, x: v.x || 0, s: (v.s == null ? 1 : v.s), o: (v.o == null ? 1 : v.o) }, vel: { ry: 0, x: 0, s: 0, o: 0 }, to: null, raf: null }
+    this._alApply(el)
+  }
+
+  _alApply(el) {
+    const c = el._alSpr.cur
+    el.style.transform = 'perspective(900px) translateX(' + c.x.toFixed(2) + 'px) rotateY(' + c.ry.toFixed(2) + 'deg) scale(' + Math.max(0.001, c.s).toFixed(3) + ')'
+    el.style.opacity = String(Math.max(0, Math.min(1, c.o)))
+  }
+
+  _alSpring(el, to, cfg) {
+    const st = el._alSpr
+    if (!st) { this._alSet(el, to); return }
+    if (st.raf) { cancelAnimationFrame(st.raf); st.raf = null }
+    st.to = to
+    let overshot = false
+    let last = performance.now()
+    const loop = (now) => {
+      const dt = Math.min(0.048, Math.max(0.001, (now - last) / 1000)); last = now
+      let settled = true
+      for (const p in st.to) {
+        const target = st.to[p]
+        const cur = st.cur[p]
+        let vel = st.vel[p] || 0
+        const k = (cfg.kMap && cfg.kMap[p]) || cfg.k || 140
+        vel += (-k * (cur - target) - (cfg.d || 14) * vel) * dt
+        const next = cur + vel * dt
+        if (p === 'ry' && !overshot && (cur - target) * (next - target) < 0) { overshot = true; if (cfg.onOvershoot) cfg.onOvershoot() }
+        st.cur[p] = next; st.vel[p] = vel
+        const eps = (p === 'o' || p === 's') ? 0.004 : 0.14
+        if (Math.abs(next - target) > eps || Math.abs(vel) > eps * 14) settled = false
+      }
+      this._alApply(el)
+      if (settled) {
+        for (const q in st.to) { st.cur[q] = st.to[q]; st.vel[q] = 0 }
+        this._alApply(el)
+        st.raf = null
+        if (cfg.onSettle) cfg.onSettle()
+        return
+      }
+      st.raf = requestAnimationFrame(loop)
+    }
+    st.raf = requestAnimationFrame(loop)
   }
 
   _triggerReveal() {
